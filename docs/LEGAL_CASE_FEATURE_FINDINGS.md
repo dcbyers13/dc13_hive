@@ -72,7 +72,7 @@ extract → analyze → enrich) was run against a real 600+ document family law 
 - Test all regex patterns against Unicode when deployed
 
 ### 5. RAG Integration
-- Flat RAG copy (25fa152_rag/) proved essential for LLM context window limits
+- Flat RAG copy (25FA152_rag/) proved essential for LLM context window limits
 - Hive should maintain this mapping automatically via database foreign keys
 - File renaming convention: `parentdir__childdir__filename.ext` is readable and
   reversible

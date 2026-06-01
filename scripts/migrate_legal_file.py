@@ -20,12 +20,12 @@ Usage:
 # ///
 
 import os
-import sys
 import shutil
+import sys
 from pathlib import Path
 
-BASE = Path("/Users/macuser/LAW_LAB/25fa152/LEGAL_FILE")
-STAGING = Path("/Users/macuser/LAW_LAB/25fa152/LEGAL_FILE_NEW")
+BASE = Path("/Users/macuser/LAW_LAB/25FA152/LEGAL_FILE")
+STAGING = Path("/Users/macuser/LAW_LAB/25FA152/LEGAL_FILE_NEW")
 
 LEGEND = """\
 # LEGAL_FILE Organization Key
@@ -118,16 +118,34 @@ def migrate(dry_run: bool):
             if d.is_dir() and "14F318" in d.name:
                 for f in sorted(d.iterdir()):
                     if f.is_file() and f.name != ".DS_Store":
-                        copy_with_path(f, STAGING / "05_RELATED_CASES" / "14F318" / f.name, dry_run)
+                        copy_with_path(
+                            f, STAGING / "05_RELATED_CASES" / "14F318" / f.name, dry_run
+                        )
                         total += 1
     # Add 15OP512 from archive (consolidated into 14F318)
-    src_15op = BASE / "ARCHIVE" / "CIVIL" / "DCB" / "OP" / "15OP512_DOCKET_SHEET_4-21-2026.md"
+    src_15op = (
+        BASE / "ARCHIVE" / "CIVIL" / "DCB" / "OP" / "15OP512_DOCKET_SHEET_4-21-2026.md"
+    )
     if src_15op.exists():
-        copy_with_path(src_15op, STAGING / "05_RELATED_CASES" / "14F318" / "15OP512_DOCKET_SHEET_4-21-2026.md", dry_run)
+        copy_with_path(
+            src_15op,
+            STAGING
+            / "05_RELATED_CASES"
+            / "14F318"
+            / "15OP512_DOCKET_SHEET_4-21-2026.md",
+            dry_run,
+        )
         total += 1
     src_15op_pdf = src_15op.with_suffix(".pdf")
     if src_15op_pdf.exists():
-        copy_with_path(src_15op_pdf, STAGING / "05_RELATED_CASES" / "14F318" / "15OP512_DOCKET_SHEET_4-21-2026.pdf", dry_run)
+        copy_with_path(
+            src_15op_pdf,
+            STAGING
+            / "05_RELATED_CASES"
+            / "14F318"
+            / "15OP512_DOCKET_SHEET_4-21-2026.pdf",
+            dry_run,
+        )
         total += 1
 
     # 13OP13/ (from ARCHIVE/CIVIL/DCB/OP/)
@@ -136,7 +154,9 @@ def migrate(dry_run: bool):
     if src_dir.exists():
         for f in sorted(src_dir.iterdir()):
             if f.is_file() and "13OP13" in f.name and f.name != ".DS_Store":
-                copy_with_path(f, STAGING / "05_RELATED_CASES" / "13OP13" / f.name, dry_run)
+                copy_with_path(
+                    f, STAGING / "05_RELATED_CASES" / "13OP13" / f.name, dry_run
+                )
                 total += 1
 
     # 22OP713/ (from ARCHIVE/CIVIL/PDD/OP/)
@@ -145,7 +165,9 @@ def migrate(dry_run: bool):
     if src_dir.exists():
         for f in sorted(src_dir.iterdir()):
             if f.is_file() and f.name != ".DS_Store":
-                copy_with_path(f, STAGING / "05_RELATED_CASES" / "22OP713" / f.name, dry_run)
+                copy_with_path(
+                    f, STAGING / "05_RELATED_CASES" / "22OP713" / f.name, dry_run
+                )
                 total += 1
 
     # 24OP613/ (from OLD_CASES/24OP613-* and ARCHIVE/CIVIL/DCB/OP/24OP613*)
@@ -156,14 +178,20 @@ def migrate(dry_run: bool):
             if d.is_dir() and "24OP613" in d.name:
                 for f in sorted(d.iterdir()):
                     if f.is_file() and f.name != ".DS_Store":
-                        copy_with_path(f, STAGING / "05_RELATED_CASES" / "24OP613" / f.name, dry_run)
+                        copy_with_path(
+                            f,
+                            STAGING / "05_RELATED_CASES" / "24OP613" / f.name,
+                            dry_run,
+                        )
                         total += 1
     # Add 24OP613 court file from archive
     src_dir_arch = BASE / "ARCHIVE" / "CIVIL" / "DCB" / "OP"
     if src_dir_arch.exists():
         for f in sorted(src_dir_arch.iterdir()):
             if f.is_file() and "24OP613" in f.name and f.name != ".DS_Store":
-                copy_with_path(f, STAGING / "05_RELATED_CASES" / "24OP613" / f.name, dry_run)
+                copy_with_path(
+                    f, STAGING / "05_RELATED_CASES" / "24OP613" / f.name, dry_run
+                )
                 total += 1
 
     # DCB_CRIMINAL/ (David's criminal history from ARCHIVE/CRIMINAL/DCB/)
@@ -200,7 +228,9 @@ def migrate(dry_run: bool):
     if src_dir.exists():
         for f in sorted(src_dir.iterdir()):
             if f.is_file() and f.name != ".DS_Store":
-                copy_with_path(f, STAGING / "05_RELATED_CASES" / "CMN_18CM2996" / f.name, dry_run)
+                copy_with_path(
+                    f, STAGING / "05_RELATED_CASES" / "CMN_18CM2996" / f.name, dry_run
+                )
                 total += 1
 
     # ── 99_MISC/ (root-level LEGAL_FILE orphans) ──
@@ -226,7 +256,7 @@ def migrate(dry_run: bool):
         readme_path.write_text(LEGEND, encoding="utf-8")
         log("wrote: LEGAL_FILE_NEW/00_README.md")
 
-    print(f"\n{'─'*50}")
+    print(f"\n{'─' * 50}")
     if dry_run:
         print(f"Dry-run complete. Would copy {total} files.")
     else:
@@ -245,7 +275,7 @@ def main():
 
     if STAGING.exists() and not dry_run:
         print(f"Error: staging directory already exists: {STAGING}", file=sys.stderr)
-        print("Remove it first: rm -rf 25fa152/LEGAL_FILE_NEW")
+        print("Remove it first: rm -rf 25FA152/LEGAL_FILE_NEW")
         sys.exit(1)
 
     print(f"Source:   {BASE}")

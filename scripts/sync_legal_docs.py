@@ -18,11 +18,18 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
+#     "celery",
+#     "django-environ",
 #     "pdfplumber",
 #     "python-dotenv",
 #     "PyMuPDF",
 #     "google-genai>=1.74.0",
 #     "django",
+#     "djangorestframework",
+#     "django-cors-headers",
+#     "whitenoise",
+#     "mozilla-django-oidc",
+#     "markitdown",
 # ]
 # ///
 

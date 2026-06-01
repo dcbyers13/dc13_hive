@@ -37,29 +37,37 @@ Arguments:
     --cleanup    Rename existing files with spaces → underscores in an existing RAG dir
 
 Example:
-    uv run flatten_for_rag.py /Users/macuser/LAW_LAB/25fa152
-    uv run flatten_for_rag.py --cleanup /Users/macuser/LAW_LAB/25fa152_rag --dry-run
+    uv run flatten_for_rag.py /Users/macuser/LAW_LAB/25FA152
+    uv run flatten_for_rag.py --cleanup /Users/macuser/LAW_LAB/25FA152_rag --dry-run
 """
 
 import os
-import sys
 import shutil
+import sys
 from pathlib import Path
 
+SKIP_DIRS = {".git", "__pycache__", ".DS_Store", ".gitmodules"}
+SKIP_FILES = {".DS_Store"}
+SKIP_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg",
+    ".tiff", ".tif", ".ico",
+    ".mp4", ".mov", ".avi", ".webm", ".mpg", ".mpeg",
+    ".mp3", ".wav", ".ogg", ".flac", ".aac",
+}
+SEPARATOR = "__"
+REPLACE_CHARS = str.maketrans({" ": "_", "\t": "_"})
 
-SKIP_DIRS = {'.git', '__pycache__', '.DS_Store', '.gitmodules'}
-SKIP_FILES = {'.DS_Store'}
-SEPARATOR = '__'
-REPLACE_CHARS = str.maketrans({' ': '_', '\t': '_'})
 
-
-def flatten(source: Path, output: Path, dry_run: bool = False) -> int:
+def flatten(source: Path, output: Path, dry_run: bool = False, prune: bool = False) -> int:
     """
     Copy files from source to output with path-encoded filenames.
+    Skips images, videos, and audio files (SKIP_EXTENSIONS).
+    When --prune is set, removes files in output with no source counterpart.
 
     Returns count of files copied.
     """
     seen = set()
+    expected = set()
     count = 0
 
     for root, dirs, files in os.walk(source):
@@ -76,6 +84,10 @@ def flatten(source: Path, output: Path, dry_run: bool = False) -> int:
                 continue
 
             src = Path(root) / fname
+            ext = src.suffix.lower()
+            if ext in SKIP_EXTENSIONS:
+                continue
+
             rel = src.relative_to(source)
 
             # Build flat filename: prefix all directory parts, then the filename
@@ -93,6 +105,7 @@ def flatten(source: Path, output: Path, dry_run: bool = False) -> int:
                 deduped = f"{stem}_{n}{ext}"
                 n += 1
             seen.add(deduped)
+            expected.add(deduped)
 
             dest = output / deduped
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -108,6 +121,26 @@ def flatten(source: Path, output: Path, dry_run: bool = False) -> int:
                     continue
 
             count += 1
+
+    # Prune: remove files in output that have no source counterpart
+    if prune:
+        pruned = 0
+        for root, dirs, files in os.walk(output):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for fname in files:
+                if fname in SKIP_FILES:
+                    continue
+                if fname in expected:
+                    continue
+                fp = Path(root) / fname
+                if dry_run:
+                    print(f"  would prune: {fp.relative_to(output)}")
+                else:
+                    fp.unlink()
+                    print(f"  pruned: {fp.relative_to(output)}")
+                pruned += 1
+        if pruned:
+            print()
 
     return count
 
@@ -127,7 +160,7 @@ def cleanup_rag_dir(rag_dir: Path, dry_run: bool = False) -> int:
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
 
         for fname in files:
-            if ' ' not in fname and '\t' not in fname:
+            if " " not in fname and "\t" not in fname:
                 continue
 
             src = Path(root) / fname
@@ -138,7 +171,9 @@ def cleanup_rag_dir(rag_dir: Path, dry_run: bool = False) -> int:
                 continue
 
             if dst.exists():
-                print(f"  skip (collision): {src.relative_to(rag_dir)}", file=sys.stderr)
+                print(
+                    f"  skip (collision): {src.relative_to(rag_dir)}", file=sys.stderr
+                )
                 continue
 
             if dry_run:
@@ -155,11 +190,12 @@ def cleanup_rag_dir(rag_dir: Path, dry_run: bool = False) -> int:
 
 
 def main():
-    dry_run = '--dry-run' in sys.argv
+    dry_run = "--dry-run" in sys.argv
+    prune = "--prune" in sys.argv
 
     # --cleanup mode: sanitize an existing RAG directory
-    if '--cleanup' in sys.argv:
-        idx = sys.argv.index('--cleanup')
+    if "--cleanup" in sys.argv:
+        idx = sys.argv.index("--cleanup")
         if idx + 1 >= len(sys.argv):
             print("Error: --cleanup requires a RAG directory path", file=sys.stderr)
             sys.exit(1)
@@ -188,7 +224,7 @@ def main():
         print(f"Error: not a directory: {src}", file=sys.stderr)
         sys.exit(1)
 
-    if len(sys.argv) > 2 and not sys.argv[2].startswith('--'):
+    if len(sys.argv) > 2 and not sys.argv[2].startswith("--"):
         out = Path(sys.argv[2]).resolve()
     else:
         out = src.parent / f"{src.name}_rag"
@@ -196,9 +232,10 @@ def main():
     print(f"Source:   {src}")
     print(f"Output:   {out}")
     print(f"Dry run:  {dry_run}")
+    print(f"Prune:    {prune}")
     print()
 
-    count = flatten(src, out, dry_run)
+    count = flatten(src, out, dry_run, prune)
 
     print()
     if dry_run:
@@ -207,5 +244,5 @@ def main():
         print(f"Copied {count} files to {out}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

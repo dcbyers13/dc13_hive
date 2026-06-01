@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """
-Ingest PDFs into 25fa152 with auto-classification.
+Ingest PDFs into 25FA152 with auto-classification.
 
-Drop a PDF into 25fa152/INGEST/, then:
+Drop a PDF into 25FA152/INGEST/, then:
 
   # Dry-run: show what would happen
   uv run dc13_hive/scripts/ingest.py [--dry-run]
@@ -33,7 +33,7 @@ Auto-classification reads first 500 chars of extracted text:
 For each PDF, delegates .md twin creation to sync_legal_docs.py, then copies both
 to the target folder. Cleans INGEST/ on success.
 
-Use --rag to also copy into 25fa152_rag/ (flat path-encoded).
+Use --rag to also copy into 25FA152_rag/ (flat path-encoded).
 """
 
 # /// script
@@ -41,17 +41,18 @@ Use --rag to also copy into 25fa152_rag/ (flat path-encoded).
 # dependencies = []
 # ///
 
+import datetime
 import os
 import re
-import sys
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-CASE_DIR = Path("/Users/macuser/LAW_LAB/25fa152")
+CASE_DIR = Path("/Users/macuser/LAW_LAB/25FA152")
 LEGAL_DIR = CASE_DIR / "LEGAL_FILE"
 INGEST_DIR = CASE_DIR / "INGEST"
-RAG_DIR = Path("/Users/macuser/LAW_LAB/25fa152_rag")
+RAG_DIR = Path("/Users/macuser/LAW_LAB/25FA152_rag")
 
 TARGETS = {
     "01_DRAFTS": LEGAL_DIR / "01_DRAFTS",
@@ -61,20 +62,156 @@ TARGETS = {
     "99_MISC": LEGAL_DIR / "99_MISC",
 }
 
-SKIP_CHARS = str.maketrans({' ': '_', '\t': '_', '(': '', ')': '', ',': '', "'": ''})
+SKIP_CHARS = str.maketrans({" ": "_", "\t": "_", "(": "", ")": "", ",": "", "'": ""})
 
 SYNC_SCRIPT = Path(__file__).resolve().parent / "sync_legal_docs.py"
 
+# ── Auto-rename: replace random filenames (PDF7247, etc.) with content-based names ──
+
+RANDOM_NAME_RE = re.compile(r"^PDF\d+$", re.IGNORECASE)
+
+
+def auto_rename(text: str, filename: str) -> str | None:
+    """Generate a descriptive filename stem from document content.
+    Returns None if the original name is meaningful (not random)."""
+    stem, _ = os.path.splitext(filename)
+    if not RANDOM_NAME_RE.match(stem):
+        return None
+
+    case_num = _extract_case_number(text)
+    date_str = _extract_filing_date(text)
+    doc_type = _extract_doc_type(text)
+    party = _extract_party(text)
+
+    parts = []
+    if date_str:
+        parts.append(date_str)
+    if doc_type:
+        parts.append(doc_type)
+    if case_num:
+        parts.append(case_num)
+    if party:
+        parts.append(party)
+
+    if not date_str and not doc_type:
+        return None  # Not enough info to build a meaningful name
+
+    return "_".join(parts).translate(SKIP_CHARS)
+
+
+def _extract_case_number(text: str) -> str | None:
+    # Fix OCR zero-instead-of-O before matching
+    clean = re.sub(r"(\d{2,})0P(\d)", r"\1OP\2", text)
+    clean = re.sub(r"(\d{2,})0FA(\d)", r"\1FA\2", clean)
+    m = re.search(
+        r"(\d{4,}(?:OP|FA|CF|CM|MR|CH|DT|DV|JA|LM|MC|P2|SC)\d{3,})",
+        clean,
+    )
+    if m:
+        raw = m.group(1)
+        # Strip leading zeros in suffix: "2024OP000613" → "2024OP613"
+        raw = re.sub(r"(OP|FA|CF|CM|MR|CH|DT|DV|JA|LM|MC|P2|SC)\d{2}0+(\d+)",
+                     lambda m: m.group(1) + m.group(2), raw)
+        # Normalize to 2‑digit year: "2024OP613" → "24OP613"
+        raw = re.sub(r"^20(\d{2}(?:OP|FA|CF|CM|MR|CH|DT|DV|JA|LM|MC|P2|SC))",
+                     r"\1", raw)
+        return raw
+    return None
+
+
+def _extract_filing_date(text: str) -> str | None:
+    m = re.search(r"FILED\s+(\w{3,9}\s+\d{1,2}\s+\d{4})", text)
+    if m:
+        for fmt in ("%b %d %Y", "%B %d %Y"):
+            try:
+                dt = datetime.datetime.strptime(m.group(1), fmt)
+                return dt.strftime("%Y_%m_%d")
+            except ValueError:
+                pass
+    m = re.search(r"Date:\s*(\d{1,2}/\d{1,2}/\d{4})", text)
+    if m:
+        parts = m.group(1).split("/")
+        return f"{parts[2]}_{parts[0]}_{parts[1]}"
+    return None
+
+
+def _extract_doc_type(text: str) -> str | None:
+    head = text[:1000].upper()
+
+    # Multi-line patterns: "PETITION FOR\nORDER OF PROTECTION"
+    m = re.search(
+        r"PETITION\s+FOR\s*\n\s*((?:ORDER\s+OF\s+PROTECTION"
+        r"|PROTECTIVE\s+ORDER|DISSOLUTION|CUSTODY|GUARDIANSHIP"
+        r"|ADOPTION|NAME\s+CHANGE|EXPUNGEMENT|RELIEF"
+        r"|TEMPORARY\s+RESTRAINING\s+ORDER|MODIFICATION"
+        r"|RELOCATION|CONTEMPT|ENFORCEMENT|DISCOVERY"
+        r"|SANCTIONS|ATTORNEY\s+FEES|ATTORNEYS\s+FEES"
+        r"|APPOINTMENT|DISMISSAL|SUMMARY\s+JUDGMENT"
+        r"|EMERGENCY|SUPPORT))",
+        head,
+    )
+    if m:
+        return f"PETITION_FOR_{m.group(1).strip().replace(' ', '_')}"
+
+    # Single-line patterns
+    lines = head.split("\n")
+    for raw in lines:
+        line = raw.strip()
+        if len(line) < 5 or line.startswith("INSTRUCTION") or line.startswith("PAGE"):
+            continue
+        m = re.match(r"PETITION\s+FOR\s+(.+)", line)
+        if m:
+            label = re.sub(r"[^A-Z0-9_]", "", m.group(1).strip().replace(" ", "_"))[:40]
+            return f"PETITION_FOR_{label}" if label else "PETITION"
+        if line in (
+            "ORDER",
+            "JUDGMENT",
+            "ORDER OF PROTECTION",
+            "EMERGENCY ORDER OF PROTECTION",
+            "PLENARY ORDER OF PROTECTION",
+        ):
+            return line.replace(" ", "_")
+        if "MOTION" in line and len(line) < 80:
+            label = re.sub(r"MOTION\s+", "", line).strip()[:40]
+            label = re.sub(r"[^A-Z0-9_]", "", label.replace(" ", "_"))
+            return f"MOTION_{label}" if label else "MOTION"
+        if line.startswith("ANSWER"):
+            return "ANSWER"
+        if line.startswith("RESPONSE"):
+            return "RESPONSE"
+    return None
+
+
+def _extract_party(text: str) -> str | None:
+    m = re.search(r"Petitioner:\s*([A-Za-z\s]+?)(?:\n|\(|\d)", text)
+    if m:
+        name = m.group(1).strip().upper()
+        if "PAULETTA" in name:
+            return "by_Pauletta"
+        if "DAVID" in name or "BYERS" in name:
+            return "by_David"
+    # Body-text fallback
+    upper = text[:1000].upper()
+    if "PAULETTA DONATELLO" in upper:
+        return "by_Pauletta"
+    if "DAVID BYERS" in upper:
+        return "by_David"
+    return None
+
 
 # ── PDF -> MD via sync_legal_docs.py (single source of truth) ──
+
 
 def convert_via_sync_legal(pdf_path: Path) -> tuple[Path | None, str]:
     """Delegate PDF->MD to sync_legal_docs.py. Returns (md_path | None, raw_text)."""
     md_path = pdf_path.with_suffix(".md")
     try:
         subprocess.run(
-            [sys.executable, str(SYNC_SCRIPT), str(pdf_path)],
-            capture_output=True, text=True, timeout=120, check=True,
+            ["uv", "run", str(SYNC_SCRIPT), str(pdf_path)],
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=True,
         )
         if md_path.exists():
             raw = extract_raw_text(md_path)
@@ -92,17 +229,20 @@ def extract_raw_text(md_path: Path) -> str:
     """Strip sync_legal_docs frontmatter; return raw body text."""
     content = md_path.read_text(encoding="utf-8")
     # Strip yaml frontmatter between --- markers
-    parts = re.split(r'^---\s*$', content, flags=re.MULTILINE, maxsplit=2)
+    parts = re.split(r"^---\s*$", content, flags=re.MULTILINE, maxsplit=2)
     if len(parts) >= 3:
         body = parts[2].strip()
     else:
         body = content.strip()
     # Strip structural path context header if present
-    body = re.sub(r'^# Structural Path Context\n.*?\n---\n\n', '', body, flags=re.DOTALL)
+    body = re.sub(
+        r"^# Structural Path Context\n.*?\n---\n\n", "", body, flags=re.DOTALL
+    )
     return body.strip()
 
 
 # ── Auto-classification ──
+
 
 def auto_classify(text: str, filename: str) -> str:
     """Return target folder name based on text analysis."""
@@ -110,15 +250,25 @@ def auto_classify(text: str, filename: str) -> str:
     fname = filename.lower()
 
     # OP / order of protection → related cases
-    if "order of protection" in head or re.search(r'\bop\b', head):
-        m = re.search(r'(\d{2,}OP\d+)', text)
+    if "order of protection" in head or re.search(r"\bop\b", head):
+        # OCR fix: "20240P000613" → "2024OP000613"
+        clean = re.sub(r"(\d{2,})0P(\d)", r"\1OP\2", text)
+        m = re.search(r"(\d{4,}OP\d{3,})", clean)
         if m:
             case = m.group(1)
+            # Strip leading zeros in suffix: "2024OP000613" → "2024OP613"
+            case = re.sub(r"OP\d{2}0+(\d+)", r"OP\1", case)
+            # Normalize to 2‑digit year: "2024OP613" → "24OP613"
+            case = re.sub(r"^20(\d{2}OP)", r"\1", case)
             return f"05_RELATED_CASES/{case}"
         return "05_RELATED_CASES"
 
     # Court order / judgment
-    if head.startswith("order") or "judgment" in head or ("entered" in head and "order" in head):
+    if (
+        head.startswith("order")
+        or "judgment" in head
+        or ("entered" in head and "order" in head)
+    ):
         return "02_ACTIVE_ORDERS"
 
     # Respondent filings
@@ -148,9 +298,17 @@ def auto_classify(text: str, filename: str) -> str:
 
 # ── RAG sync ──
 
-def sync_to_rag(pdf_path: Path, md_path: Path | None, target_rel: str, dry_run: bool):
-    """Copy files to 25fa152_rag/ with path-encoded flat names."""
-    parts = ["LEGAL_FILE"] + target_rel.split("/") + [pdf_path.name]
+
+def sync_to_rag(
+    pdf_path: Path,
+    md_path: Path | None,
+    target_rel: str,
+    dry_run: bool,
+    custom_name: str | None = None,
+):
+    """Copy files to 25FA152_rag/ with path-encoded flat names."""
+    flat_base = custom_name or pdf_path.name
+    parts = ["LEGAL_FILE"] + target_rel.split("/") + [flat_base]
     flat_name = "__".join(parts).translate(SKIP_CHARS)
     flat_md_name = flat_name.rsplit(".", 1)[0] + ".md"
 
@@ -172,7 +330,10 @@ def sync_to_rag(pdf_path: Path, md_path: Path | None, target_rel: str, dry_run: 
 
 # ── Main ──
 
-def process_file(pdf_path: Path, target: str | None, auto: bool, do_rag: bool, dry_run: bool):
+
+def process_file(
+    pdf_path: Path, target: str | None, auto: bool, do_rag: bool, dry_run: bool
+):
     """Process a single PDF: convert, route, optionally sync RAG."""
     print(f"\n  File: {pdf_path.name}")
 
@@ -193,6 +354,18 @@ def process_file(pdf_path: Path, target: str | None, auto: bool, do_rag: bool, d
         target_rel = "99_MISC"
         print(f"    default -> {target_rel}")
 
+    # Auto-rename random filenames (PDF7247 -> descriptive name)
+    new_stem = auto_rename(raw_text, pdf_path.name) if auto else None
+    if new_stem:
+        pdf_name = new_stem + ".pdf"
+        md_name = None
+        if md_path:
+            md_name = new_stem + ".md"
+        print(f"    renamed: {pdf_path.name} -> {pdf_name}")
+    else:
+        pdf_name = pdf_path.name
+        md_name = md_path.name if md_path else None
+
     # Resolve target dir
     if target_rel.startswith("05_RELATED_CASES/"):
         target_dir = LEGAL_DIR / target_rel
@@ -202,21 +375,25 @@ def process_file(pdf_path: Path, target: str | None, auto: bool, do_rag: bool, d
         target_dir = LEGAL_DIR / target_rel
 
     if dry_run:
-        print(f"    would copy to: {target_dir / pdf_path.name}")
-        if md_path:
-            print(f"    would copy md: {target_dir / md_path.name}")
+        print(f"    would copy: {target_dir.name}/{pdf_name}")
+        if md_path and md_name:
+            print(f"    would copy: {target_dir.name}/{md_name}")
         if do_rag:
-            sync_to_rag(pdf_path, md_path, target_rel, dry_run=True)
+            sync_to_rag(pdf_path, md_path, target_rel, dry_run=True, custom_name=pdf_name)
         return True
 
     # Copy files
     target_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(pdf_path, target_dir / pdf_path.name)
-    print(f"    copied: {target_dir.name}/{pdf_path.name}")
+    shutil.copy2(pdf_path, target_dir / pdf_name)
+    print(f"    copied: {target_dir.name}/{pdf_name}")
 
-    if md_path:
-        shutil.copy2(md_path, target_dir / md_path.name)
-        print(f"    copied: {target_dir.name}/{md_path.name}")
+    if md_path and md_name:
+        shutil.copy2(md_path, target_dir / md_name)
+        print(f"    copied: {target_dir.name}/{md_name}")
+
+    # RAG sync (before INGEST cleanup while files still exist)
+    if do_rag:
+        sync_to_rag(pdf_path, md_path, target_rel, dry_run=False, custom_name=pdf_name)
 
     # Remove from INGEST/
     if str(pdf_path.parent).startswith(str(INGEST_DIR)):
@@ -224,10 +401,6 @@ def process_file(pdf_path: Path, target: str | None, auto: bool, do_rag: bool, d
         if md_path:
             md_path.unlink()
         print(f"    removed from INGEST/")
-
-    # RAG sync
-    if do_rag:
-        sync_to_rag(pdf_path, md_path, target_rel, dry_run=False)
 
     return True
 
@@ -250,10 +423,12 @@ def main():
         if idx + 1 < len(sys.argv):
             single_file = Path(sys.argv[idx + 1]).resolve()
             if not single_file.exists() or single_file.suffix.lower() != ".pdf":
-                print(f"Error: file not found or not PDF: {single_file}", file=sys.stderr)
+                print(
+                    f"Error: file not found or not PDF: {single_file}", file=sys.stderr
+                )
                 sys.exit(1)
 
-    print(f"Ingest: 25fa152/INGEST/ -> LEGAL_FILE/")
+    print(f"Ingest: 25FA152/INGEST/ -> LEGAL_FILE/")
     print(f"Auto:    {auto}")
     print(f"Target:  {target or '(auto/detect)'}")
     print(f"RAG:     {do_rag}")
@@ -266,7 +441,7 @@ def main():
     else:
         if not INGEST_DIR.exists():
             print(f"No INGEST/ directory found at {INGEST_DIR}")
-            print("Create it: mkdir -p 25fa152/INGEST")
+            print("Create it: mkdir -p 25FA152/INGEST")
             sys.exit(1)
 
         pdfs = sorted(INGEST_DIR.glob("*.pdf"))
@@ -280,7 +455,7 @@ def main():
             if ok:
                 count += 1
 
-        print(f"\n{'─'*50}")
+        print(f"\n{'─' * 50}")
         if dry_run:
             print(f"Would process {count} files from INGEST/")
         else:

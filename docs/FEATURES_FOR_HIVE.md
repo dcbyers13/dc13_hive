@@ -15,6 +15,7 @@
 | 5 | **Smart Table Inline Editor** | Permissive cell modification preserving strict data layout standards | Specified |
 | 6 | **Automatic Ingestion & File Sanitization Pipeline** | Re-encodes character sets, enforces underscore formatting, routes source twins based on text keyword parsing | Deployed |
 | 7 | **Auto-Gap Analysis & Remediation UI** | Surfaces coverage gaps with actionable next-steps for document recovery | Specified |
+| 8 | **Narrative-to-Coordinate Extraction Engine** | Parses irregular narrative sources (police reports, FOIA exports) using regex boundary logic to isolate Incident Date, Officer ID, Agency, Charges, Arrest Status; drafts Incident Timeline Entry preview panel for one-click verification | Specified |
 
 ---
 
@@ -63,13 +64,20 @@
 - **Pipeline position**: Post-timeline enrichment
 - **Key challenge**: Reducing false positives from intentionally inactive periods
 
+### 8. Narrative-to-Coordinate Extraction Engine
+- **Source**: Long-form police narratives, FOIA exports (e.g., South Elgin PD reports)
+- **Output**: Structured Incident Timeline Entry with Incident Date, Officer ID, Reporting Agency, Charges, Arrest Status
+- **Pipeline position**: Post-ingest, pre-timeline enrichment
+- **Key challenge**: Variable boilerplate across law enforcement agencies; requires regex boundary logic to isolate structured data fields from narrative prose
+- **Implementation target**: `core/parsers.py` within Hive app
+
 ---
 
 ## Cross-References
 
 - Pipeline scripts: `dc13_hive/scripts/`
-- Case documents: `25fa152/LEGAL_FILE/`
-- Timeline artifacts: `25fa152/TIMELINE*.md`, `25fa152/LEGAL_TIMELINE.md`
-- OP analysis: `25fa152/ORDERS_OF_PROTECTION_TIMELINE.md`
+- Case documents: `25FA152/LEGAL_FILE/`
+- Timeline artifacts: `25FA152/TIMELINE*.md`, `25FA152/LEGAL_TIMELINE.md`
+- OP analysis: `25FA152/ORDERS_OF_PROTECTION_TIMELINE.md`
 - Previous findings: `dc13_hive/docs/LEGAL_CASE_FEATURE_FINDINGS.md`
 - AI agent roadmap: `dc13_hive/docs/AI_AGENT_FEATURES_FOR_HIVE.md`

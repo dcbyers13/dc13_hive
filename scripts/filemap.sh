@@ -15,7 +15,7 @@ HERE=$(cd "$(dirname "$0")/../.." && pwd)  # root of LAW_LAB
     echo "## Top Level"
     echo ""
     echo '```'
-    tree -F --dirsfirst -L 2 "$HERE" -I '25fa152_rag' | head -200
+    tree -F --dirsfirst -L 2 "$HERE" -I '25FA152_rag' | head -200
     echo '```'
     echo ""
 
@@ -35,17 +35,17 @@ HERE=$(cd "$(dirname "$0")/../.." && pwd)  # root of LAW_LAB
     echo '```'
     echo ""
 
-    # ── 25fa152/ case documents ──
-    echo "## 25fa152/ — Case Document Library"
+    # ── 25FA152/ case documents ──
+    echo "## 25FA152/ — Case Document Library"
     echo ""
     echo '```'
-    tree -F --dirsfirst -L 3 "$HERE/25fa152" -I 'AGENTS.md|FILEMAP.md|LEGAL_FILE/COMMS|LEGAL_FILE/MEDICAL_MENTAL|LEGAL_FILE/SCHOOL|LEGAL_FILE/LEGAL_FILE|LEGAL_FILE/0_DRAFTS|LEGAL_FILE/ACTIVE_ORDERS' | head -300
+    tree -F --dirsfirst -L 3 "$HERE/25FA152" -I 'AGENTS.md|FILEMAP.md|LEGAL_FILE/COMMS|LEGAL_FILE/MEDICAL_MENTAL|LEGAL_FILE/SCHOOL|LEGAL_FILE/LEGAL_FILE|LEGAL_FILE/0_DRAFTS|LEGAL_FILE/ACTIVE_ORDERS' | head -300
     echo '```'
     echo ""
     echo "### LEGAL_FILE/ subdirectories"
     echo ""
     echo '```'
-    tree -F --dirsfirst -L 2 "$HERE/25fa152/LEGAL_FILE"
+    tree -F --dirsfirst -L 2 "$HERE/25FA152/LEGAL_FILE"
     echo '```'
     echo ""
 
@@ -57,12 +57,12 @@ HERE=$(cd "$(dirname "$0")/../.." && pwd)  # root of LAW_LAB
     echo '```'
     echo ""
 
-    # ── 25fa152_rag/ summary ──
-    RAG_COUNT=$(find "$HERE/25fa152_rag" -type f | wc -l)
-    echo "## 25fa152_rag/ — Flat RAG Copy ($RAG_COUNT files)"
+    # ── 25FA152_rag/ summary ──
+    RAG_COUNT=$(find "$HERE/25FA152_rag" -type f | wc -l)
+    echo "## 25FA152_rag/ — Flat RAG Copy ($RAG_COUNT files)"
     echo ""
     echo '```'
-    tree -F --dirsfirst -L 1 "$HERE/25fa152_rag" | head -40
+    tree -F --dirsfirst -L 1 "$HERE/25FA152_rag" | head -40
     echo "├── ... ($RAG_COUNT files total — PDF + MD pairs from all case subdirs)"
     echo '```'
     echo ""

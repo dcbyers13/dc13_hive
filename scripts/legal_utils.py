@@ -108,30 +108,6 @@ def extract_form_fields(pdf_path):
     return form_data
 
 
-def extract_checkboxes(pdf_path):
-    """Extract checkbox data from a PDF."""
-    checkboxes = {}
-    try:
-        with pdfplumber.open(pdf_path) as pdf:
-            for page_num, page in enumerate(pdf.pages):
-                for obj in page.chars:
-                    text = obj.get("text", "")
-                    if text.strip().lower() in ["x", "✓"]:
-                        try:
-                            cx = float(obj.get("x0", 0))
-                            cy = float(obj.get("y0", 0))
-                        except:
-                            continue
-                        label_text = f"page {page_num+1}, row {int(cy/50)}"
-                        checkboxes[f"checkbox_{len(checkboxes)}"] = {
-                            "mark": text,
-                            "label": label_text
-                        }
-    except Exception:
-        pass
-    return checkboxes
-
-
 def get_local_ocr():
     """Get or create PaddleOCR instance for local OCR."""
     global _local_ocr

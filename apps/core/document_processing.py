@@ -50,7 +50,7 @@ except ImportError:
         return None
 
 from legal_utils import (
-    is_readable, extract_form_fields, extract_text_from_pdf, extract_checkboxes
+    is_readable, extract_form_fields, extract_text_from_pdf
 )
 
 def ocr_pdf_images(pdf_path):
@@ -77,7 +77,7 @@ def ocr_pdf_images(pdf_path):
         print(f"  -> Local OCR error: {e}")
     return "\n".join(text_parts)
 
-def build_markdown_with_form(text, form_data, checkboxes, original_name="", virtual_path=""):
+def build_markdown_with_form(text, form_data, original_name="", virtual_path=""):
     lines = []
     
     name = original_name or Path(virtual_path).name if virtual_path else original_name
@@ -107,10 +107,6 @@ def build_markdown_with_form(text, form_data, checkboxes, original_name="", virt
         lines.append("\n## Form Fields\n")
         for key, value in form_data.items():
             lines.append(f"- **{key}**: {value}")
-    if checkboxes:
-        lines.append("\n## Checkboxes Checked\n")
-        for key, info in checkboxes.items():
-            lines.append(f"- [{info.get('mark', '')}] {info.get('label', '')}")
     return "\n".join(lines)
 
 def get_llm_converter():
@@ -131,7 +127,6 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
     md_path = pdf_path.with_suffix(".md")
 
     form_data = {}
-    checkboxes = {}
     text = ""
     llm_client = get_llm_converter()
 
@@ -159,11 +154,6 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
         except Exception:
             pass
 
-        try:
-            checkboxes = extract_checkboxes(str(pdf_path))
-        except Exception:
-            pass
-
         if len(text.strip()) < 300:
             if llm_client:
                 try:
@@ -184,7 +174,7 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
         if len(text.strip()) < 300:
             text = text + "\n\n[Note: This PDF may contain images. OCR processing may be incomplete.]"
 
-        combined = build_markdown_with_form(text, form_data, checkboxes, original_name, virtual_path)
+        combined = build_markdown_with_form(text, form_data, original_name, virtual_path)
 
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(combined)

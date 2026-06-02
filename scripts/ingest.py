@@ -6,34 +6,43 @@
 """
 Ingest PDFs into 25FA152 with auto-classification.
 
-Drop a PDF into 25FA152/INGEST/, then:
+Drop PDFs into 25FA152/INGEST/, then:
 
-  # Dry-run: show what would happen
-  uv run dc13_hive/scripts/ingest.py [--dry-run]
-
-  # Auto-classify and route (with RAG sync + FILEMAP regeneration)
+  # Full mechanical pipeline: convert, classify, route, RAG sync, FILEMAP
     uv run dc13_hive/scripts/ingest.py --auto --rag --filemap
 
-    # Route to a specific directory
-    uv run dc13_hive/scripts/ingest.py --target 03_BYERS_FILINGS [--rag] [--filemap]
+  # Dry-run: preview classification and routing
+    uv run dc13_hive/scripts/ingest.py --auto --dry-run
 
-    # Direct path (overrides INGEST/ scan)
-    uv run dc13_hive/scripts/ingest.py --file /path/to/document.pdf
+  # Sanitize filenames using content-extracted titles (overrides random names)
+    uv run dc13_hive/scripts/ingest.py --auto --sanitize --rag --filemap
+
+  # Route everything to a specific directory (bypass auto-classify)
+    uv run dc13_hive/scripts/ingest.py --target 04_DONATELLO_FILINGS --rag
+
+  # Direct path (overrides INGEST/ scan)
+    uv run dc13_hive/scripts/ingest.py --file /path/to/document.pdf --rag
 
 PDF->MD conversion is delegated to sync_legal_docs.py (single source of truth).
 No duplicate conversion logic lives here.
 
-Auto-classification reads first 500 chars of extracted text:
-  "Petitioner" + "Motion" / "Petition"  → 03_BYERS_FILINGS
-  "Respondent" / "Answer" / "Response"  → 04_DONATELLO_FILINGS
-  "Order" / "Judgment"                  → 02_ACTIVE_ORDERS
-  "OP" / "Order of Protection"          → 05_RELATED_CASES/<case_num>
-  (fallback: 99_MISC)
+Auto-classification reads extracted text and checks:
+  Signature blocks (most reliable for party attribution)
+  "Petitioner" / "Respondent" header fields
+  Filename cues
 
-For each PDF, delegates .md twin creation to sync_legal_docs.py, then copies both
-to the target folder. Cleans INGEST/ on success.
+KNOWN LIMITATIONS:
+  Party attribution (David vs Pauletta) is imperfect — both parties use the
+  same ATJ form templates. Always review auto-classified results before
+  relying on them for legal strategy. The --sanitize flag generates names
+  from form content but human verification is strongly recommended.
+
+For each PDF, delegates .md twin creation to sync_legal_docs.py, then copies
+both to the target folder. Cleans INGEST/ on success.
 
 Use --rag to also copy into 25FA152_rag/ (flat path-encoded).
+Use --filemap (-f) to regenerate FILEMAP.md after processing.
+Use --sanitize (-s) to generate content-based names for all files.
 """
 
 # /// script
@@ -71,13 +80,9 @@ SYNC_SCRIPT = Path(__file__).resolve().parent / "sync_legal_docs.py"
 RANDOM_NAME_RE = re.compile(r"^PDF\d+$", re.IGNORECASE)
 
 
-def auto_rename(text: str, filename: str) -> str | None:
-    """Generate a descriptive filename stem from document content.
-    Returns None if the original name is meaningful (not random)."""
-    stem, _ = os.path.splitext(filename)
-    if not RANDOM_NAME_RE.match(stem):
-        return None
-
+def build_descriptive_name(text: str, filename: str) -> str | None:
+    """Build a descriptive filename stem from document content.
+    Returns None if insufficient content to build a meaningful name."""
     case_num = _extract_case_number(text)
     date_str = _extract_filing_date(text)
     doc_type = _extract_doc_type(text)
@@ -86,17 +91,53 @@ def auto_rename(text: str, filename: str) -> str | None:
     parts = []
     if date_str:
         parts.append(date_str)
+    else:
+        # Use modification date as fallback?
+        pass
+
     if doc_type:
-        parts.append(doc_type)
+        # Truncate long doc types
+        dt = doc_type[:80]
+        parts.append(dt)
+
     if case_num:
         parts.append(case_num)
+
     if party:
         parts.append(party)
 
-    if not date_str and not doc_type:
-        return None  # Not enough info to build a meaningful name
+    if not parts:
+        return None
 
-    return "_".join(parts).translate(SKIP_CHARS)
+    name = "_".join(parts).translate(SKIP_CHARS)
+    # Remove trailing punctuation/underscores
+    name = name.strip("_")
+    return name if len(name) > 10 else None
+
+
+def auto_rename(text: str, filename: str) -> str | None:
+    """Generate a descriptive filename stem from document content.
+    Only renames filenames that look random (PDF7247, etc.).
+    Returns None if the original name is meaningful (not random)."""
+    stem, _ = os.path.splitext(filename)
+    if RANDOM_NAME_RE.match(stem):
+        return build_descriptive_name(text, filename)
+    return None
+
+
+def sanitize_name(text: str, filename: str) -> str | None:
+    """Generate a proper name for any file, regardless of original name.
+    Only returns a new name if it differs significantly from the original."""
+    new = build_descriptive_name(text, filename)
+    if not new:
+        return None
+    old_stem, _ = os.path.splitext(filename)
+    # Sanitize old stem
+    old_clean = re.sub(r"[^A-Za-z0-9_]", "", old_stem.replace(" ", "_")).upper()[:30]
+    new_clean = re.sub(r"[^A-Za-z0-9_]", "", new).upper()[:30]
+    if old_clean == new_clean or new_clean in old_clean or old_clean in new_clean:
+        return None  # Name already captures the same info
+    return new
 
 
 def _extract_case_number(text: str) -> str | None:
@@ -136,7 +177,41 @@ def _extract_filing_date(text: str) -> str | None:
 
 
 def _extract_doc_type(text: str) -> str | None:
-    head = text[:1000].upper()
+    head = text[:2000].upper()
+
+    # Priority: ATJ form "Motion to:" title line (section 1 of ATJ 801.7)
+    m = re.search(
+        r"Motion to:\s*_*([A-Za-z0-9\s,;'/-]+?)_*\s*$",
+        head,
+        re.MULTILINE,
+    )
+    if m:
+        title = m.group(1).strip().rstrip("_").strip()
+        # Normalize: collapse whitespace, uppercase
+        title = re.sub(r"[_]+", " ", title)
+        title = re.sub(r"\s+", "_", title.strip())[:60]
+        return f"MOTION_{title}"
+
+    # ATJ form "APPEARANCE"
+    if "APPEARANCE (CIVIL)" in head or head.strip().startswith("APPEARANCE"):
+        return "APPEARANCE"
+
+    # ATJ form "AFFIRMATIVE DEFENSES"
+    if "AFFIRMATIVE DEFENSES" in head:
+        return "AFFIRMATIVE_DEFENSES"
+
+    # ATJ form "ANSWER OR RESPONSE"
+    if "ANSWER OR RESPONSE" in head:
+        return "ANSWER"
+
+    # ATJ form "NOTICE OF COURT DATE FOR MOTION"
+    if "NOTICE OF COURT DATE" in head:
+        m = re.search(r"Motion to:\s*_*([A-Za-z0-9\s,;'/-]+?)_*\s*$", head, re.MULTILINE)
+        if m:
+            title = re.sub(r"[_]+", " ", m.group(1).strip())
+            title = re.sub(r"\s+", "_", title.strip())[:50]
+            return f"NOTICE_{title}" if title else "NOTICE"
+        return "NOTICE"
 
     # Multi-line patterns: "PETITION FOR\nORDER OF PROTECTION"
     m = re.search(
@@ -183,6 +258,40 @@ def _extract_doc_type(text: str) -> str | None:
 
 
 def _extract_party(text: str) -> str | None:
+    """Identify filer from signature block (most reliable), then header, then body text."""
+    # Priority 1: Signature block — "Print Name: Pauletta Donatello" near signature
+    sig = re.search(
+        r"Signature\s*/s[^]*?Print\s*Name\s*_*([A-Za-z\s]+?)_*",
+        text[:2000],
+    )
+    if sig:
+        name = sig.group(1).strip().upper()
+        if "PAULETTA" in name:
+            return "by_Pauletta"
+        if "DAVID" in name or "BYERS" in name:
+            return "by_David"
+
+    # Priority 2: "I am filing the Motion. I am the: [x] Defendant/Respondent"
+    filer_checkbox = re.search(
+        r"I am filing the Motion\.\s*I am the:\s*\n\s*[^]*?(?:Plaintiff|Defendant)",
+        text[:1500],
+    )
+    if filer_checkbox:
+        block = filer_checkbox.group(0)
+        if "Defendant" in block or "Respondent" in block:
+            # Respondent is Pauletta in 25FA152, but could be David in OP cases
+            # Check case number to determine
+            case = _extract_case_number(text)
+            if case and "OP" in (case or ""):
+                return "by_Pauletta"  # Pauletta is typically Petitioner in OPs
+            return "by_Pauletta"  # Default: Respondent = Pauletta in 25FA152
+        if "Plaintiff" in block or "Petitioner" in block:
+            case = _extract_case_number(text)
+            if case and "OP" in (case or ""):
+                return "by_David"  # David is typically Respondent in OPs
+            return "by_David"  # Default: Petitioner = David in 25FA152
+
+    # Priority 3: Header fields
     m = re.search(r"Petitioner:\s*([A-Za-z\s]+?)(?:\n|\(|\d)", text)
     if m:
         name = m.group(1).strip().upper()
@@ -190,6 +299,19 @@ def _extract_party(text: str) -> str | None:
             return "by_Pauletta"
         if "DAVID" in name or "BYERS" in name:
             return "by_David"
+
+    # Priority 4: "I am completing this form for myself" near signature name
+    sig_self = re.search(
+        r"I am completing this form for myself[^]*?Print Name\s*_*([A-Za-z\s]+?)_*",
+        text[:2500],
+    )
+    if sig_self:
+        name = sig_self.group(1).strip().upper()
+        if "PAULETTA" in name:
+            return "by_Pauletta"
+        if "DAVID" in name or "BYERS" in name:
+            return "by_David"
+
     # Body-text fallback
     upper = text[:1000].upper()
     if "PAULETTA DONATELLO" in upper:
@@ -245,20 +367,23 @@ def extract_raw_text(md_path: Path) -> str:
 
 
 def auto_classify(text: str, filename: str) -> str:
-    """Return target folder name based on text analysis."""
-    head = text[:500].lower()
+    """Return target folder name based on text analysis.
+
+    Note: Party attribution (David vs Pauletta) is unreliable from text alone
+    because both parties use the same ATJ forms. The signature block is the
+    most reliable signal. When in doubt, routes to 03_BYERS_FILINGS (default
+    Petitioner) and flags for human review.
+    """
+    head = text[:1000].lower()
     fname = filename.lower()
 
     # OP / order of protection → related cases
     if "order of protection" in head or re.search(r"\bop\b", head):
-        # OCR fix: "20240P000613" → "2024OP000613"
         clean = re.sub(r"(\d{2,})0P(\d)", r"\1OP\2", text)
         m = re.search(r"(\d{4,}OP\d{3,})", clean)
         if m:
             case = m.group(1)
-            # Strip leading zeros in suffix: "2024OP000613" → "2024OP613"
             case = re.sub(r"OP\d{2}0+(\d+)", r"OP\1", case)
-            # Normalize to 2‑digit year: "2024OP613" → "24OP613"
             case = re.sub(r"^20(\d{2}OP)", r"\1", case)
             return f"05_RELATED_CASES/{case}"
         return "05_RELATED_CASES"
@@ -271,13 +396,22 @@ def auto_classify(text: str, filename: str) -> str:
     ):
         return "02_ACTIVE_ORDERS"
 
-    # Respondent filings
+    # Signature-based party detection (most reliable)
+    party = _extract_party(text)
+
+    # Respondent filings (signature or explicit header match)
+    if party == "by_Pauletta":
+        return "04_DONATELLO_FILINGS"
+    if party == "by_David":
+        return "03_BYERS_FILINGS"
+
+    # Fallback: header-based detection
     if "respondent" in head and ("answer" in head or "response" in head):
         return "04_DONATELLO_FILINGS"
     if "answer to" in head or "response to" in head:
         return "04_DONATELLO_FILINGS"
 
-    # Petitioner filings
+    # Petitioner filings header
     if "petitioner" in head:
         if "motion" in head or "petition" in head or "exhibit" in head:
             return "03_BYERS_FILINGS"
@@ -332,7 +466,12 @@ def sync_to_rag(
 
 
 def process_file(
-    pdf_path: Path, target: str | None, auto: bool, do_rag: bool, dry_run: bool
+    pdf_path: Path,
+    target: str | None,
+    auto: bool,
+    do_rag: bool,
+    dry_run: bool,
+    sanitize: bool = False,
 ):
     """Process a single PDF: convert, route, optionally sync RAG."""
     print(f"\n  File: {pdf_path.name}")
@@ -354,14 +493,26 @@ def process_file(
         target_rel = "99_MISC"
         print(f"    default -> {target_rel}")
 
-    # Auto-rename random filenames (PDF7247 -> descriptive name)
-    new_stem = auto_rename(raw_text, pdf_path.name) if auto else None
-    if new_stem:
-        pdf_name = new_stem + ".pdf"
-        md_name = None
-        if md_path:
-            md_name = new_stem + ".md"
-        print(f"    renamed: {pdf_path.name} -> {pdf_name}")
+    # Rename: try auto-rename for random names, or sanitize for all
+    if sanitize and raw_text:
+        new_stem = sanitize_name(raw_text, pdf_path.name)
+        if new_stem:
+            pdf_name = new_stem + ".pdf"
+            md_name = (new_stem + ".md") if md_path else None
+            print(f"    sanitized: {pdf_path.name} -> {pdf_name}")
+        else:
+            pdf_name = pdf_path.name
+            md_name = md_path.name if md_path else None
+            print(f"    name kept: {pdf_name}")
+    elif auto:
+        new_stem = auto_rename(raw_text, pdf_path.name)
+        if new_stem:
+            pdf_name = new_stem + ".pdf"
+            md_name = None if not md_path else (new_stem + ".md")
+            print(f"    renamed: {pdf_path.name} -> {pdf_name}")
+        else:
+            pdf_name = pdf_path.name
+            md_name = md_path.name if md_path else None
     else:
         pdf_name = pdf_path.name
         md_name = md_path.name if md_path else None
@@ -409,6 +560,7 @@ def main():
     dry_run = "--dry-run" in sys.argv
     do_rag = "--rag" in sys.argv or "-r" in sys.argv
     do_filemap = "--filemap" in sys.argv or "-f" in sys.argv
+    do_sanitize = "--sanitize" in sys.argv or "-s" in sys.argv
     auto = "--auto" in sys.argv or "-a" in sys.argv
     target = None
 
@@ -433,11 +585,12 @@ def main():
     print(f"Target:  {target or '(auto/detect)'}")
     print(f"RAG:     {do_rag}")
     print(f"Filemap: {do_filemap}")
+    print(f"Sanitize:{do_sanitize}")
     print(f"Dry run: {dry_run}")
     print()
 
     if single_file:
-        process_file(single_file, target, auto, do_rag, dry_run)
+        process_file(single_file, target, auto, do_rag, dry_run, do_sanitize)
     else:
         if not INGEST_DIR.exists():
             print(f"No INGEST/ directory found at {INGEST_DIR}")
@@ -451,7 +604,7 @@ def main():
 
         count = 0
         for pdf in pdfs:
-            ok = process_file(pdf, target, auto, do_rag, dry_run)
+            ok = process_file(pdf, target, auto, do_rag, dry_run, do_sanitize)
             if ok:
                 count += 1
 

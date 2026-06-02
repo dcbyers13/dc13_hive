@@ -77,7 +77,7 @@ def ocr_pdf_images(pdf_path):
         print(f"  -> Local OCR error: {e}")
     return "\n".join(text_parts)
 
-def build_markdown_with_form(text, form_data, original_name="", virtual_path=""):
+def build_markdown_with_form(text, form_data, original_name="", virtual_path="", ocr_status="good"):
     lines = []
     
     name = original_name or Path(virtual_path).name if virtual_path else original_name
@@ -86,6 +86,7 @@ def build_markdown_with_form(text, form_data, original_name="", virtual_path="")
     lines.append("---")
     lines.append(f"original_name: {name}")
     lines.append(f"virtual_path: {vpath}")
+    lines.append(f"ocr_status: {ocr_status}")
     lines.append("---")
     lines.append("")
     
@@ -99,6 +100,15 @@ def build_markdown_with_form(text, form_data, original_name="", virtual_path="")
         lines.append(path_chain)
         lines.append("")
         lines.append("---")
+        lines.append("")
+    
+    if ocr_status == "image_only":
+        lines.append("> **⚠️ OCR REQUIRED**: This document is image-based and could not be read.")
+        lines.append("> Submit for AI Vision OCR processing.")
+        lines.append("")
+    elif ocr_status == "needs_review":
+        lines.append("> **⚠️ LOW TEXT QUALITY**: This document may have incomplete text extraction.")
+        lines.append("> Review and submit for AI Vision OCR if needed.")
         lines.append("")
     
     if text:
@@ -154,7 +164,8 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
         except Exception:
             pass
 
-        if len(text.strip()) < 300:
+        if not is_readable(text):
+            print(f"  -> Low text quality, attempting OCR...")
             if llm_client:
                 try:
                     print(f"  -> Using Vision API...")
@@ -171,10 +182,17 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
                 print(f"  -> Using local PaddleOCR...")
                 text = ocr_pdf_images(str(pdf_path))
 
-        if len(text.strip()) < 300:
-            text = text + "\n\n[Note: This PDF may contain images. OCR processing may be incomplete.]"
+        if is_readable(text):
+            ocr_status = "good"
+            print(f"  -> Text quality: good")
+        elif len(text.strip()) < 50:
+            ocr_status = "image_only"
+            print(f"  -> Text quality: IMAGE ONLY — OCR still needed")
+        else:
+            ocr_status = "needs_review"
+            print(f"  -> Text quality: LOW — review recommended")
 
-        combined = build_markdown_with_form(text, form_data, original_name, virtual_path)
+        combined = build_markdown_with_form(text, form_data, original_name, virtual_path, ocr_status)
 
         with open(md_path, "w", encoding="utf-8") as f:
             f.write(combined)

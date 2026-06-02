@@ -49,16 +49,41 @@ from pathlib import Path
 SKIP_DIRS = {".git", "__pycache__", ".DS_Store", ".gitmodules"}
 SKIP_FILES = {".DS_Store"}
 SKIP_EXTENSIONS = {
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".svg",
-    ".tiff", ".tif", ".ico",
-    ".mp4", ".mov", ".avi", ".webm", ".mpg", ".mpeg",
-    ".mp3", ".wav", ".ogg", ".flac", ".aac",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".bmp",
+    ".webp",
+    ".svg",
+    ".tiff",
+    ".tif",
+    ".ico",
+    ".mp4",
+    ".mov",
+    ".avi",
+    ".webm",
+    ".mpg",
+    ".mpeg",
+    ".mp3",
+    ".wav",
+    ".ogg",
+    ".flac",
+    ".aac",
+    ".heic",
+    ".heics",
+    ".db",
+    ".3gp",
+    ".caf",
+    ".vcf",
 }
 SEPARATOR = "__"
 REPLACE_CHARS = str.maketrans({" ": "_", "\t": "_"})
 
 
-def flatten(source: Path, output: Path, dry_run: bool = False, prune: bool = False) -> int:
+def flatten(
+    source: Path, output: Path, dry_run: bool = False, prune: bool = False
+) -> int:
     """
     Copy files from source to output with path-encoded filenames.
     Skips images, videos, and audio files (SKIP_EXTENSIONS).

@@ -44,7 +44,7 @@ extract → analyze → enrich) was run against a real 600+ document family law 
 ### Deduplication Across Sections
 - Same event appears in multiple TIMELINE.md sections (e.g., battery conviction
   in both `2016–2020` and `Criminal Cases (PDD)`)
-- `build_master_timeline.py` implements Jaccard similarity to deduplicate on merge
+- ~~`build_master_timeline.py`~~ ⚠️ **DEPRECATED — archived to `dc13_hive/scripts/archive/`. Manual curation is mandatory.**
 - **Threshold tuning needed**: 0.5 works but some near-duplicates slip through
 
 ## Hive Feature Recommendations

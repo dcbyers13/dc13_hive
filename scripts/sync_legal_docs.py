@@ -57,23 +57,15 @@ def sync_pdfs_to_markdown(single_file=None):
     skipped_count = 0
     failed_count = 0
 
-    base = Path(".").resolve()
-
     if single_file:
-        pdf_path = Path(single_file).resolve()
+        pdf_path = Path(single_file)
         if not pdf_path.exists():
             print(f"Error: File not found: {single_file}")
             return
-
-        original_name = pdf_path.name
-        try:
-            virtual_path = str(pdf_path.parent.relative_to(base))
-        except ValueError:
-            virtual_path = ""
-
+        
         print(f"  -> Processing: {pdf_path.name}")
         try:
-            convert_pdf_to_markdown(pdf_path, original_name, virtual_path)
+            convert_pdf_to_markdown(pdf_path)
             converted_count = 1
             print(f"     [Success] Converted {pdf_path.name}")
         except Exception as e:
@@ -86,7 +78,7 @@ def sync_pdfs_to_markdown(single_file=None):
         for pdf_path in pdf_files:
             if ".venv" in str(pdf_path) or ".git" in str(pdf_path) or "media/archive" in str(pdf_path):
                 continue
-
+                
             md_path = pdf_path.with_suffix(".md")
 
             # Check if sync is needed
@@ -94,15 +86,9 @@ def sync_pdfs_to_markdown(single_file=None):
                 skipped_count += 1
                 continue
 
-            original_name = pdf_path.name
-            try:
-                virtual_path = str(pdf_path.parent.relative_to(base))
-            except ValueError:
-                virtual_path = ""
-
             print(f"  -> Processing: {pdf_path.name}")
             try:
-                convert_pdf_to_markdown(pdf_path, original_name, virtual_path)
+                convert_pdf_to_markdown(pdf_path)
                 converted_count += 1
                 print(f"     [Success] Converted {pdf_path.name}")
             except Exception as e:

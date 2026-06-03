@@ -77,6 +77,27 @@ def ocr_pdf_images(pdf_path):
         print(f"  -> Local OCR error: {e}")
     return "\n".join(text_parts)
 
+def clean_form_field_spacing(text: str) -> str:
+    """Remove underscores that pdftotext inserts between characters
+    in fillable PDF form fields. Pattern: _c_h_a_r_a_c_t_e_r_s_
+    Iterates to handle adjacent chars (e.g. D__o from D and o in same field)."""
+    # Pass 1: strip underscores between individual chars  _c_ → c
+    while True:
+        cleaned = re.sub(r"_([A-Za-z0-9.])_", r"\1", text)
+        if cleaned == text:
+            break
+        text = cleaned
+    # Pass 2: strip underscores at form-field word boundaries
+    # e.g. "David_ " → "David ", " _C." → "C.", "D._ " → "D. "
+    text = re.sub(r"(?<=[A-Za-z0-9.])_(?=\s|$)", r"", text)
+    text = re.sub(r"(?<=\s)_(?=[A-Za-z0-9.])", r"", text)
+    # Pass 3: strip underscores between adjacent letters from tight form-field spacing
+    # e.g. "D_o" → "Do", "Fam__ily" → "Family"
+    text = re.sub(r"__", r"_", text)  # collapse double underscores first
+    text = re.sub(r"(?<=[A-Za-z0-9])_(?=[A-Za-z0-9])", r"", text)
+    return text
+
+
 def build_markdown_with_form(text, form_data, original_name="", virtual_path="", ocr_status="good"):
     lines = []
     
@@ -148,6 +169,8 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
             )
             if result.returncode == 0:
                 text = result.stdout
+                # Clean form-field underscore artifacts
+                text = clean_form_field_spacing(text)
         except Exception:
             pass
 
@@ -156,6 +179,7 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
                 with pdfplumber.open(str(pdf_path)) as pdf:
                     text_parts = [p.extract_text_simple() for p in pdf.pages]
                     text = "\n\n--- Page Break ---\n\n".join(text_parts)
+                text = clean_form_field_spacing(text)
             except Exception:
                 pass
 

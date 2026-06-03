@@ -43,6 +43,12 @@ both to the target folder. Cleans INGEST/ on success.
 Use --rag to also copy into 25FA152_rag/ (flat path-encoded).
 Use --filemap (-f) to regenerate FILEMAP.md after processing.
 Use --sanitize (-s) to generate content-based names for all files.
+Use --report-unscanned (-u) to list all image-only/low-text files in LEGAL_FILE.
+    (runs independently of ingestion, no PDFs needed)
+Use --track (-t) after ingestion to:
+    1. Re-run extract_all_dates.py -> DATE_INDEX.md
+    2. Cross-reference LEGAL_FILE -> UNPROCESSED.md
+    3. Show which files haven't been date-indexed yet
 """
 
 # /// script
@@ -74,6 +80,7 @@ TARGETS = {
 SKIP_CHARS = str.maketrans({" ": "_", "\t": "_", "(": "", ")": "", ",": "", "'": ""})
 
 SYNC_SCRIPT = Path(__file__).resolve().parent / "sync_legal_docs.py"
+EXTRACT_DATES_SCRIPT = Path(__file__).resolve().parent / "extract_all_dates.py"
 
 # ── Auto-rename: replace random filenames (PDF7247, etc.) with content-based names ──
 
@@ -138,6 +145,17 @@ def sanitize_name(text: str, filename: str) -> str | None:
     if old_clean == new_clean or new_clean in old_clean or old_clean in new_clean:
         return None  # Name already captures the same info
     return new
+
+
+def add_date_prefix(stem: str, text: str) -> str:
+    """Prepend filing date (or today) to filename stem.
+    Strips vestigial leading draft prefixes (e.g. 0_, 1_).
+    Skips if stem already starts with a date like 2026_06_02_."""
+    if re.match(r"^\d{4}_\d{2}_\d{2}[_-]", stem):
+        return stem
+    stem = re.sub(r"^\d+_", "", stem)  # strip 0_, 1_, etc.
+    dt_str = _extract_filing_date(text) or datetime.datetime.now().strftime("%Y_%m_%d")
+    return f"{dt_str}_{stem}" if not stem.startswith(dt_str) else stem
 
 
 def _extract_case_number(text: str) -> str | None:
@@ -261,7 +279,7 @@ def _extract_party(text: str) -> str | None:
     """Identify filer from signature block (most reliable), then header, then body text."""
     # Priority 1: Signature block — "Print Name: Pauletta Donatello" near signature
     sig = re.search(
-        r"Signature\s*/s[^]*?Print\s*Name\s*_*([A-Za-z\s]+?)_*",
+        r"Signature\s*/s[\s\S]*?Print\s*Name\s*_*([A-Za-z\s]+?)_*",
         text[:2000],
     )
     if sig:
@@ -273,7 +291,7 @@ def _extract_party(text: str) -> str | None:
 
     # Priority 2: "I am filing the Motion. I am the: [x] Defendant/Respondent"
     filer_checkbox = re.search(
-        r"I am filing the Motion\.\s*I am the:\s*\n\s*[^]*?(?:Plaintiff|Defendant)",
+        r"I am filing the Motion\.\s*I am the:\s*\n\s*[\s\S]*?(?:Plaintiff|Defendant)",
         text[:1500],
     )
     if filer_checkbox:
@@ -302,7 +320,7 @@ def _extract_party(text: str) -> str | None:
 
     # Priority 4: "I am completing this form for myself" near signature name
     sig_self = re.search(
-        r"I am completing this form for myself[^]*?Print Name\s*_*([A-Za-z\s]+?)_*",
+        r"I am completing this form for myself[\s\S]*?Print Name\s*_*([A-Za-z\s]+?)_*",
         text[:2500],
     )
     if sig_self:
@@ -321,11 +339,29 @@ def _extract_party(text: str) -> str | None:
     return None
 
 
+# ── OCR quality detection ──
+
+
+def _detect_ocr_quality(text: str, current_status: str = "good") -> str:
+    """Re-check OCR quality from extracted text content.
+    Downgrades over-optimistic status if text is too sparse.
+    Returns 'image_only', 'needs_review', or the current status."""
+    if current_status == "image_only":
+        return current_status
+    clean = re.sub(r"--- Page Break ---", "", text)
+    clean = re.sub(r"\s+", "", clean).strip()
+    if len(clean) < 50:
+        return "image_only"
+    if len(clean) < 200:
+        return "needs_review"
+    return current_status
+
+
 # ── PDF -> MD via sync_legal_docs.py (single source of truth) ──
 
 
-def convert_via_sync_legal(pdf_path: Path) -> tuple[Path | None, str]:
-    """Delegate PDF->MD to sync_legal_docs.py. Returns (md_path | None, raw_text)."""
+def convert_via_sync_legal(pdf_path: Path) -> tuple[Path | None, str, str]:
+    """Delegate PDF->MD to sync_legal_docs.py. Returns (md_path, raw_text, ocr_status)."""
     md_path = pdf_path.with_suffix(".md")
     try:
         subprocess.run(
@@ -336,31 +372,39 @@ def convert_via_sync_legal(pdf_path: Path) -> tuple[Path | None, str]:
             check=True,
         )
         if md_path.exists():
-            raw = extract_raw_text(md_path)
+            raw, ocr_status = extract_raw_text(md_path)
+            # Re-check OCR quality — sync_legal may have been optimistic
+            ocr_status = _detect_ocr_quality(raw, ocr_status)
             chars = len(raw.strip())
-            print(f"    md twin created via sync_legal_docs.py ({chars} chars)")
-            return md_path, raw
+            status_flag = f" [{ocr_status}]" if ocr_status != "good" else ""
+            print(f"    md twin created via sync_legal_docs.py ({chars} chars{status_flag})")
+            return md_path, raw, ocr_status
     except subprocess.CalledProcessError as e:
         print(f"    sync_legal_docs.py failed: {e.stderr.strip()}", file=sys.stderr)
     except Exception as e:
         print(f"    sync_legal_docs.py error: {e}", file=sys.stderr)
-    return None, ""
+    return None, "", "good"
 
 
-def extract_raw_text(md_path: Path) -> str:
-    """Strip sync_legal_docs frontmatter; return raw body text."""
+def extract_raw_text(md_path: Path) -> tuple[str, str]:
+    """Strip sync_legal_docs frontmatter; return (body_text, ocr_status)."""
     content = md_path.read_text(encoding="utf-8")
-    # Strip yaml frontmatter between --- markers
+    ocr_status = "good"
+    # Parse yaml frontmatter between --- markers
     parts = re.split(r"^---\s*$", content, flags=re.MULTILINE, maxsplit=2)
     if len(parts) >= 3:
+        frontmatter = parts[1]
         body = parts[2].strip()
+        m = re.search(r"ocr_status:\s*(\S+)", frontmatter)
+        if m:
+            ocr_status = m.group(1)
     else:
         body = content.strip()
     # Strip structural path context header if present
     body = re.sub(
         r"^# Structural Path Context\n.*?\n---\n\n", "", body, flags=re.DOTALL
     )
-    return body.strip()
+    return body.strip(), ocr_status
 
 
 # ── Auto-classification ──
@@ -437,8 +481,10 @@ def sync_to_rag(
     pdf_path: Path,
     md_path: Path | None,
     target_rel: str,
-    dry_run: bool,
+    ocr_status: str = "good",
+    dry_run: bool = False,
     custom_name: str | None = None,
+    raw_body: str | None = None,
 ):
     """Copy files to 25FA152_rag/ with path-encoded flat names."""
     flat_base = custom_name or pdf_path.name
@@ -457,8 +503,24 @@ def sync_to_rag(
 
     rag_pdf.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(pdf_path, rag_pdf)
+    print(f"    rag pdf -> {rag_pdf.name}")
+
     if md_path and md_path.exists():
-        shutil.copy2(md_path, rag_md)
+        if raw_body is not None:
+            # Write enriched frontmatter + body
+            virtual = f"LEGAL_FILE/{target_rel}/{custom_name or pdf_path.name}"
+            original = custom_name or pdf_path.name
+            fm = (
+                "---\n"
+                f"original_name: {original}\n"
+                f"virtual_path: {virtual}\n"
+                f"ocr_status: {ocr_status}\n"
+                "---\n\n"
+            )
+            rag_md.write_text(fm + raw_body + "\n", encoding="utf-8")
+        else:
+            rag_md.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(md_path, rag_md)
     print(f"    rag synced: {flat_name}")
 
 
@@ -481,7 +543,7 @@ def process_file(
         return False
 
     # Convert to md via sync_legal_docs.py; use raw text for classification
-    md_path, raw_text = convert_via_sync_legal(pdf_path)
+    md_path, raw_text, ocr_status = convert_via_sync_legal(pdf_path)
 
     # Determine target
     if target:
@@ -517,6 +579,18 @@ def process_file(
         pdf_name = pdf_path.name
         md_name = md_path.name if md_path else None
 
+    # Prepend date to filename (from document text or today)
+    if raw_text:
+        old_pdf = pdf_name
+        stem, ext = os.path.splitext(pdf_name)
+        new_stem = add_date_prefix(stem, raw_text)
+        pdf_name = new_stem + ext
+        if md_name:
+            md_stem, md_ext = os.path.splitext(md_name)
+            md_name = add_date_prefix(md_stem, raw_text) + md_ext
+        if pdf_name != old_pdf:
+            print(f"    date-prefixed: {old_pdf} -> {pdf_name}")
+
     # Resolve target dir
     if target_rel.startswith("05_RELATED_CASES/"):
         target_dir = LEGAL_DIR / target_rel
@@ -530,21 +604,37 @@ def process_file(
         if md_path and md_name:
             print(f"    would copy: {target_dir.name}/{md_name}")
         if do_rag:
-            sync_to_rag(pdf_path, md_path, target_rel, dry_run=True, custom_name=pdf_name)
+            sync_to_rag(pdf_path, md_path, target_rel, dry_run=True, ocr_status=ocr_status, custom_name=pdf_name)
         return True
+
+    # Extract raw body and get ocr_status
+    raw_body = None
+    if md_path and md_path.exists():
+        raw_body, ocr_status = extract_raw_text(md_path)
+        ocr_status = _detect_ocr_quality(raw_body, ocr_status)
 
     # Copy files
     target_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(pdf_path, target_dir / pdf_name)
     print(f"    copied: {target_dir.name}/{pdf_name}")
 
-    if md_path and md_name:
-        shutil.copy2(md_path, target_dir / md_name)
+    if md_path and md_name and raw_body:
+        target_md = target_dir / md_name
+        virtual = f"LEGAL_FILE/{target_rel}/{md_name}"
+        original = md_name
+        fm = (
+            "---\n"
+            f"original_name: {original}\n"
+            f"virtual_path: {virtual}\n"
+            f"ocr_status: {ocr_status}\n"
+            "---\n\n"
+        )
+        target_md.write_text(fm + raw_body + "\n", encoding="utf-8")
         print(f"    copied: {target_dir.name}/{md_name}")
 
     # RAG sync (before INGEST cleanup while files still exist)
     if do_rag:
-        sync_to_rag(pdf_path, md_path, target_rel, dry_run=False, custom_name=pdf_name)
+        sync_to_rag(pdf_path, md_path if md_path and md_path.exists() else None, target_rel, ocr_status=ocr_status, dry_run=False, custom_name=pdf_name, raw_body=raw_body)
 
     # Remove from INGEST/
     if str(pdf_path.parent).startswith(str(INGEST_DIR)):
@@ -625,5 +715,221 @@ def main():
         print("\nTip: Run flatten_for_rag.py after batch ingests to sync RAG dir.")
 
 
+# ── Date extraction & processing tracker ──
+
+
+def track_ingestion(legal_dir: Path = LEGAL_DIR, case_dir: Path = CASE_DIR) -> int:
+    """Post-ingestion tracking: extract dates, cross-reference, write UNPROCESSED.md.
+    Returns number of files not yet date-indexed."""
+    print(f"\n{'=' * 72}")
+    print(f"  STAGE: Date extraction & processing tracker")
+    print(f"{'=' * 72}")
+
+    # ── Step 1: Run extract_all_dates.py ──
+    date_index_path = case_dir / "DATE_INDEX.md"
+    print(f"\n  [1/3] Running extract_all_dates.py ...")
+    try:
+        subprocess.run(
+            ["uv", "run", str(EXTRACT_DATES_SCRIPT),
+             str(case_dir), "--output", str(date_index_path)],
+            capture_output=True, text=True, timeout=300, check=True,
+        )
+        print(f"    DATE_INDEX.md regenerated ({date_index_path})")
+    except subprocess.CalledProcessError as e:
+        print(f"    extract_all_dates.py failed: {e.stderr.strip()}", file=sys.stderr)
+        return -1
+    except Exception as e:
+        print(f"    extract_all_dates.py error: {e}", file=sys.stderr)
+        return -1
+
+    # ── Step 2: Parse DATE_INDEX.md to get indexed files ──
+    print(f"  [2/3] Cross-referencing LEGAL_FILE vs DATE_INDEX ...")
+    content = date_index_path.read_text(encoding="utf-8")
+
+    # Extract file paths from "Files by Date Count" table and "Full Date Index" sections
+    indexed_files = set()
+    for m in re.finditer(r"^\| \d+ \| (.+?) \|$", content, re.MULTILINE):
+        fpath = m.group(1).strip()
+        # Skip non-LEGAL_FILE entries
+        if fpath.startswith("LEGAL_FILE/"):
+            # Normalize: remove leading LEGAL_FILE/
+            indexed_files.add(fpath)
+
+    # Also find all files from "Full Date Index" sections (### headers)
+    for m in re.finditer(r"^### (.+)$", content, re.MULTILINE):
+        fpath = m.group(1).strip()
+        if fpath.startswith("LEGAL_FILE/"):
+            indexed_files.add(fpath)
+
+    indexed_rel = set()
+    for f in indexed_files:
+        # Strip "LEGAL_FILE/" prefix -> relative to LEGAL_FILE dir
+        rel = f.replace("LEGAL_FILE/", "", 1)
+        indexed_rel.add(rel)
+
+    # ── Step 3: Scan LEGAL_FILE for all .md files ──
+    actual_files = set()
+    for f in sorted(legal_dir.rglob("*.md")):
+        rel = str(f.relative_to(legal_dir))
+        actual_files.add(rel)
+
+    # Also check for .pdf files without .md twins (orphan PDFs)
+    orphan_pdfs = []
+    for f in sorted(legal_dir.rglob("*.pdf")):
+        md_twin = f.with_suffix(".md")
+        if not md_twin.exists():
+            rel = str(f.relative_to(legal_dir))
+            orphan_pdfs.append(rel)
+
+    unprocessed = sorted(actual_files - indexed_rel)
+    processed = sorted(actual_files & indexed_rel)
+
+    print(f"\n    LEGAL_FILE .md files:     {len(actual_files)}")
+    print(f"    Indexed in DATE_INDEX:   {len(processed)}")
+    print(f"    NOT yet date-indexed:    {len(unprocessed)}")
+    if orphan_pdfs:
+        print(f"    Orphan PDFs (no .md twin): {len(orphan_pdfs)}")
+
+    # ── Step 4: Write UNPROCESSED.md ──
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    lines = []
+    lines.append(f"# Ingestion Processing Status — {case_dir.name}")
+    lines.append(f"Generated: {now}")
+    lines.append(f"")
+    lines.append(f"| Category | Count |")
+    lines.append(f"|----------|-------|")
+    lines.append(f"| Date-indexed files | {len(processed)} |")
+    lines.append(f"| **Not yet date-indexed** | **{len(unprocessed)}** |")
+    lines.append(f"| Orphan PDFs (no .md twin) | {len(orphan_pdfs)} |")
+    lines.append(f"")
+
+    if unprocessed:
+        lines.append(f"## Files Not Yet Date-Indexed ({len(unprocessed)})")
+        lines.append(f"These .md files were not found in DATE_INDEX.md.")
+        lines.append(f"Run `extract_all_dates.py` then manually review for timeline events.")
+        lines.append(f"")
+        for f in unprocessed:
+            lines.append(f"- `LEGAL_FILE/{f}`")
+        lines.append(f"")
+
+    if orphan_pdfs:
+        lines.append(f"## Orphan PDFs — No .md Twin ({len(orphan_pdfs)})")
+        lines.append(f"These PDFs have no digital twin. Run `sync_legal_docs.py` on them.")
+        lines.append(f"")
+        for f in orphan_pdfs:
+            lines.append(f"- `LEGAL_FILE/{f}`")
+        lines.append(f"")
+
+    if processed:
+        lines.append(f"## Already Date-Indexed ({len(processed)})")
+        lines.append(f"These files appear in DATE_INDEX.md. Verify timeline events are extracted.")
+        lines.append(f"")
+        for f in processed:
+            lines.append(f"- `LEGAL_FILE/{f}`")
+        lines.append(f"")
+
+    report_path = case_dir / "UNPROCESSED.md"
+    report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"\n    Written: UNPROCESSED.md")
+
+    print(f"\n{'=' * 72}\n")
+    return len(unprocessed)
+
+
+# ── Unscanned report ──
+
+
+def report_unscanned(legal_dir: Path = LEGAL_DIR, write_file: bool = True) -> int:
+    """Scan all .md twins in LEGAL_FILE and report image-only / low-text files.
+    Writes OCR_REPORT.md to case dir when write_file=True.
+    Returns count of files needing attention."""
+    image_only = []
+    needs_review = []
+    for f in sorted(legal_dir.rglob("*.md")):
+        body, ocr_status = extract_raw_text(f)
+        if not body.strip():
+            ocr_status = "image_only"
+        else:
+            ocr_status = _detect_ocr_quality(body, ocr_status)
+
+        rel = f.relative_to(legal_dir.parent)
+        if ocr_status == "image_only":
+            image_only.append(rel)
+        elif ocr_status == "needs_review":
+            needs_review.append(rel)
+
+    total = len(image_only) + len(needs_review)
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    lines = []
+    lines.append(f"# OCR Quality Report — {legal_dir.parent.name}/LEGAL_FILE/")
+    lines.append(f"Generated: {now}")
+    lines.append(f"")
+    lines.append(f"| Status | Count |")
+    lines.append(f"|--------|-------|")
+    lines.append(f"| Image Only | {len(image_only)} |")
+    lines.append(f"| Needs Review | {len(needs_review)} |")
+    lines.append(f"| **Total** | **{total}** |")
+    lines.append(f"")
+
+    if image_only:
+        lines.append(f"## Image Only ({len(image_only)})")
+        lines.append(f"No text could be extracted. Requires AI Vision OCR (Gemini).")
+        lines.append(f"")
+        for f in image_only:
+            lines.append(f"- `{f}`")
+        lines.append(f"")
+
+    if needs_review:
+        lines.append(f"## Needs Review ({len(needs_review)})")
+        lines.append(f"Very low text content — may have partial OCR or be mostly image.")
+        lines.append(f"")
+        for f in needs_review:
+            lines.append(f"- `{f}`")
+        lines.append(f"")
+
+    if not total:
+        lines.append(f"All files have readable text.")
+
+    report_text = "\n".join(lines)
+
+    # Always print to stdout
+    print(f"\n{'=' * 72}")
+    print(f"  OCR QUALITY REPORT — {legal_dir.parent.name}/LEGAL_FILE/")
+    print(f"{'=' * 72}")
+
+    if image_only:
+        print(f"\n  IMAGE ONLY — {len(image_only)} file(s) — no text extracted")
+        print(f"  {'─' * 60}")
+        for f in image_only:
+            print(f"    {f}")
+    else:
+        print(f"\n  No image-only files found.")
+
+    if needs_review:
+        print(f"\n  NEEDS REVIEW — {len(needs_review)} file(s) — very low text")
+        print(f"  {'─' * 60}")
+        for f in needs_review:
+            print(f"    {f}")
+    else:
+        print(f"\n  No low-text files found.")
+
+    print(f"\n  TOTAL: {len(image_only)} image-only + {len(needs_review)} needs review")
+    print(f"{'=' * 72}")
+
+    if write_file:
+        report_path = legal_dir.parent / "OCR_REPORT.md"
+        report_path.write_text(report_text + "\n", encoding="utf-8")
+        print(f"  Written: {report_path.relative_to(Path.cwd().resolve())}")
+
+    print()
+    return total
+
+
 if __name__ == "__main__":
-    main()
+    if "--report-unscanned" in sys.argv or "-u" in sys.argv:
+        report_unscanned()
+    elif "--track" in sys.argv or "-t" in sys.argv:
+        track_ingestion()
+    else:
+        main()

@@ -233,12 +233,18 @@ def scan_directory(
     # File types to scan
     text_extensions = {'.md', '.txt', '.json', '.html'}
 
+    # Files to skip (output reports that would create circular extraction)
+    skip_files = {'DATE_INDEX.md', 'UNPROCESSED.md', 'OCR_REPORT.md',
+                  'TIMELINE_GAP_ANALYSIS.md', 'FILEMAP.md'}
+
     for root, dirs, files in os.walk(directory):
         # Skip hidden dirs
         dirs[:] = [d for d in dirs if not d.startswith('.')]
 
         for fname in files:
             if fname.startswith('.'):
+                continue
+            if fname in skip_files:
                 continue
 
             ext = Path(fname).suffix.lower()

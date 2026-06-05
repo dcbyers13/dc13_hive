@@ -501,10 +501,6 @@ def sync_to_rag(
             print(f"    rag md  -> {rag_md.name}")
         return
 
-    rag_pdf.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(pdf_path, rag_pdf)
-    print(f"    rag pdf -> {rag_pdf.name}")
-
     if md_path and md_path.exists():
         if raw_body is not None:
             # Write enriched frontmatter + body

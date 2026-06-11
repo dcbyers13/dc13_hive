@@ -3,17 +3,20 @@
 json_to_transcript.py — Transform THREAD_MASTER JSON → polished legal transcript HTML.
 
 Purpose:
-  Generate a print-optimized, forensically-labeled communication transcript for
-  use as Exhibit A in case 25FA152 (Byers v. Donatello). The transcript HTML
+  Generate print-optimized, forensically-labeled communication transcripts for
+  use as exhibits in case 25FA152 (Byers v. Donatello). The transcript HTML
   preserves full metadata while being page-break-safe and legible in black and
   white or color.
 
 Pipeline position — last step of THREAD_MASTER workflow:
   SMS/HTML exports + Gmail mbox + Google Voice HTML + Apple Messages
     → build_thread_master.py (dedup + channel healing + sender normalization)
-    → THREAD_MASTER_Violette.json (5,336 entries across 8 channel types)
+    → THREAD_MASTER_<Contact>.json (entries across all channel types)
     → json_to_transcript.py (collapse + classify + render)
-    → THREAD_MASTER_Violette_Transcript.html (4,912 blocks as print-ready HTML)
+    → THREAD_MASTER_<Contact>_Transcript.html (print-ready HTML blocks)
+
+Supports THREAD_MASTER files for any contact (Violette, Pauletta, etc.).
+Sender styles and channel mappings are defined at the top of the module.
 
 Key transformations:
   1. Collapse: Group (timestamp, sender, message[:200]) to block duplicate
@@ -49,6 +52,7 @@ Output:
 
 import argparse
 import json
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -60,9 +64,12 @@ from pathlib import Path
 CHANNEL_LABELS = {
     "imessage": "iMessage (Encrypted)",
     "sms": "SMS (Unencrypted)",
+    "SMS": "SMS (Unencrypted)",
     "google_voice": "Google Voice",
     "gmail_mbox": "Gmail (mbox)",
     "gmail_md": "Gmail (markdown export)",
+    "TalkingParents": "TalkingParents",
+    "Email": "Email",
     "unknown": "Unknown Channel",
     "imessage_tapback": "iMessage Tapback (Reaction)",
     "imessage_extension": "iMessage Extension (App Data)",
@@ -71,9 +78,12 @@ CHANNEL_LABELS = {
 CHANNEL_DOT_COLORS = {
     "imessage": "#1982FC",
     "sms": "#65c466",
+    "SMS": "#65c466",
     "google_voice": "#dddddd",
     "gmail_mbox": "#d4af37",
     "gmail_md": "#bbbbbb",
+    "TalkingParents": "#9b59b6",
+    "Email": "#3498db",
     "unknown": "#aaaaaa",
     "imessage_tapback": "#ff9500",
     "imessage_extension": "#af52de",
@@ -87,8 +97,11 @@ CHANNEL_PRIORITY = {
     "imessage_extension": 2,
     "imessage": 3,
     "sms": 4,
+    "SMS": 4,
     "google_voice": 5,
     "gmail_mbox": 6,
+    "TalkingParents": 6,
+    "Email": 7,
     "gmail_md": 7,
     "unknown": 8,
 }
@@ -110,6 +123,18 @@ SENDER_STYLES = {
         "border": "#e0e0e0",
         "name_color": "#8b2252",
         "label": "Violette Donatello",
+    },
+    "David C. Byers": {
+        "bg": "#f0f4f8",
+        "border": "#dde3ed",
+        "name_color": "#1a4971",
+        "label": "David C. Byers",
+    },
+    "Pauletta Donatello": {
+        "bg": "#fff8f0",
+        "border": "#f0e0d0",
+        "name_color": "#a0522d",
+        "label": "Pauletta Donatello",
     },
 }
 
@@ -221,6 +246,92 @@ def _infer_channel_from_raw_sender(raw_senders: list[str]) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Near-Duplicate Detection & Merge
+# ---------------------------------------------------------------------------
+
+def _strip_emoji(text: str) -> str:
+    """Remove emoji and other symbolic Unicode characters (category So)."""
+    return "".join(ch for ch in text if unicodedata.category(ch) != "So")
+
+
+def _normalize_for_compare(text: str) -> str:
+    """Normalize message text for fuzzy near-duplicate comparison.
+
+    Strips trailing whitespace/punctuation, removes emoji, collapses
+    whitespace, lowercases. The result is a clean string that can be
+    compared for prefix/equality matching.
+    """
+    text = text.rstrip().rstrip(".,!?;:)'\"")
+    text = _strip_emoji(text)
+    text = " ".join(text.split())
+    return text.lower()
+
+
+def _is_near_duplicate(msg1: str, msg2: str) -> bool:
+    """Check if two messages are near-duplicates (differ only by emoji/punctuation/trailing words).
+
+    Rules:
+      1. After normalization, equal → yes.
+      2. One is a prefix of the other and the longer is <2× the shorter → yes.
+      3. Otherwise → no.
+    """
+    if not msg1 or not msg2:
+        return False
+    n1 = _normalize_for_compare(msg1)
+    n2 = _normalize_for_compare(msg2)
+    if n1 == n2:
+        return True
+    if n1.startswith(n2) or n2.startswith(n1):
+        shorter = min(len(n1), len(n2))
+        longer = max(len(n1), len(n2))
+        if shorter > 0 and longer / shorter < 2.0:
+            return True
+    return False
+
+
+def _merge_near_duplicates(blocks: list[dict]) -> list[dict]:
+    """Merge adjacent blocks with same (timestamp, sender) and near-identical messages.
+
+    Keeps the longer message and the higher-priority channel. Also merges
+    raw_sender lists so forensic traceability is preserved.
+    """
+    if not blocks:
+        return blocks
+    merged = [blocks[0]]
+    for block in blocks[1:]:
+        last = merged[-1]
+        if (
+            block.get("timestamp") == last.get("timestamp")
+            and block.get("sender") == last.get("sender")
+            and _is_near_duplicate(
+                block.get("message", ""), last.get("message", "")
+            )
+        ):
+            # Keep longer message (more complete version)
+            if len(block.get("message", "")) > len(last.get("message", "")):
+                last["message"] = block["message"]
+            # Merge raw_senders
+            last_raw = last.get("raw_sender", "")
+            block_raw = block.get("raw_sender", "")
+            if block_raw and block_raw not in last_raw:
+                last["raw_sender"] = "; ".join(
+                    filter(None, [last_raw, block_raw])
+                )
+            # Channel priority: prefer higher-priority channel
+            existing_prio = CHANNEL_PRIORITY.get(
+                last.get("channel", "unknown"), 99
+            )
+            incoming_prio = CHANNEL_PRIORITY.get(
+                block.get("channel", "unknown"), 99
+            )
+            if incoming_prio < existing_prio:
+                last["channel"] = block["channel"]
+        else:
+            merged.append(block)
+    return merged
+
+
+# ---------------------------------------------------------------------------
 # Group Collapse
 # ---------------------------------------------------------------------------
 
@@ -274,8 +385,8 @@ def _collapse_groups(entries: list[dict]) -> list[dict]:
             if gc and not merged.get("group_chat"):
                 merged["group_chat"] = gc
 
-            # Track subject (email)
-            subj = m.get("subject", "")
+            # Track subject (email / TalkingParents threads)
+            subj = m.get("subject", "") or m.get("subject_header", "")
             if subj:
                 merged["subject"] = subj
 
@@ -352,6 +463,7 @@ def _collapse_groups(entries: list[dict]) -> list[dict]:
         collapsed.append(build)
 
     collapsed.sort(key=lambda m: m.get("timestamp", ""))
+    collapsed = _merge_near_duplicates(collapsed)
     return collapsed
 
 

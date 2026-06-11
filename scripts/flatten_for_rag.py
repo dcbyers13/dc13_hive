@@ -46,7 +46,7 @@ import shutil
 import sys
 from pathlib import Path
 
-SKIP_DIRS = {".git", "__pycache__", ".DS_Store", ".gitmodules"}
+SKIP_DIRS = {".git", "__pycache__", ".DS_Store", ".gitmodules", "INGEST", "COMMS"}
 SKIP_FILES = {".DS_Store"}
 SKIP_EXTENSIONS = {
     ".pdf",  # RAG = metadata/text only; source PDFs stay in LEGAL_FILE/

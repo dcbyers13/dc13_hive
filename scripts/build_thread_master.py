@@ -121,6 +121,7 @@ SENDER_NORMALIZATION = {
     "Violette Donatello": "Violette Donatello",
     "Violette Michele": "Violette Donatello",
     "+16307018735": "Pauletta Donatello",
+    "Pauletta": "Pauletta Donatello",
     "+18159013610": "Jake Pisarski",
     "zadynneill@icloud.com": "Zadyn Neill",
     "zadyn@iyou.me": "Zadyn Neill",
@@ -251,12 +252,12 @@ class SMSHTMLParser(HTMLParser):
                         break
                     except ValueError:
                         continue
-            self._in_timestamp = False
+                self._in_timestamp = False
 
         if self._in_sender:
             sender = data.strip()
             if sender:
-                self._current["sender"] = sender
+                self._current["sender"] = normalize_sender(sender)
             self._in_sender = False
 
         if self._in_app_header_name:

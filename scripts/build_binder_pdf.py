@@ -52,18 +52,44 @@ def _add_page_numbers_to_file(filepath):
         page = writer.pages[i]
         mb = page.mediabox
         rot = page.get("/Rotate", 0)
-        # Account for rotation: visual width is height when rotated 90/270
+        w = float(mb.width)
+        h = float(mb.height)
+
+        # Visual coordinate system dimensions
         if rot in (90, 270):
-            page_width = float(mb.height)
+            vw, vh = h, w
         else:
-            page_width = float(mb.width)
+            vw, vh = w, h
+
+        # Visual position: bottom-center
+        vis_left = vw / 2 - PAGE_NUMBER_WIDTH / 2
+        vis_right = vw / 2 + PAGE_NUMBER_WIDTH / 2
+        vis_bottom = PAGE_NUMBER_Y
+        vis_top = PAGE_NUMBER_Y + 20
+
+        # Map from visual to unrotated PDF coordinates
+        if rot == 90:
+            x1 = h - vis_top
+            y1 = vis_left
+            x2 = h - vis_bottom
+            y2 = vis_right
+        elif rot == 270:
+            x1 = vis_bottom
+            y1 = h - vis_right
+            x2 = vis_top
+            y2 = h - vis_left
+        else:
+            x1 = vis_left
+            y1 = vis_bottom
+            x2 = vis_right
+            y2 = vis_top
+
         num = i + 1
         text = f"- {num} -"
-        left = (page_width / 2) - (PAGE_NUMBER_WIDTH / 2)
 
         ft = FreeText(
             text=text,
-            rect=(left, PAGE_NUMBER_Y, left + PAGE_NUMBER_WIDTH, PAGE_NUMBER_Y + PAGE_NUMBER_HEIGHT),
+            rect=(x1, y1, x2, y2),
             font="Times-Roman",
             font_size=9,
             border_color=None,

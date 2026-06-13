@@ -30,7 +30,7 @@ from pypdf.annotations import FreeText
 
 PAGE_NUMBER_Y = 30
 PAGE_NUMBER_HEIGHT = 20
-PAGE_NUMBER_WIDTH = 60
+PAGE_NUMBER_WIDTH = 90
 
 
 def _doc_title_from_filename(basename):

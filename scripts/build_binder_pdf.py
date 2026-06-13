@@ -6,7 +6,7 @@ Usage:
 
 Options:
     -p, --page-numbers     Add centered page numbers at bottom of each page
-    -i, --index            Add alphabetical subject index (uses fpdf2)
+    -i, --index            Append alphabetical subject index (uses fpdf2)
     --index-config <json>  JSON file with manual index entries for cross-references
     -o, --output <name>    Output filename (default: COMBINED_BINDER.pdf)
 
@@ -51,7 +51,12 @@ def _add_page_numbers_to_file(filepath):
     for i in range(len(reader.pages)):
         page = writer.pages[i]
         mb = page.mediabox
-        page_width = float(mb.width)
+        rot = page.get("/Rotate", 0)
+        # Account for rotation: visual width is height when rotated 90/270
+        if rot in (90, 270):
+            page_width = float(mb.height)
+        else:
+            page_width = float(mb.width)
         num = i + 1
         text = f"- {num} -"
         left = (page_width / 2) - (PAGE_NUMBER_WIDTH / 2)
@@ -189,22 +194,24 @@ def build_binder(
     writer.write(combined)
     writer.close()
 
-    # Phase 2: add page numbers (post-process to avoid FreeText clone issues)
-    if page_numbers:
-        print("  adding page numbers...")
-        _add_page_numbers_to_file(combined)
+    # Phase 2: (skipped — page numbers deferred to Phase 4)
 
-    # Phase 3: prepend index
+    # Phase 3: append index at end
     if index:
         index_path = _build_index(files, input_dir, index_config, doc_ranges)
         if index_path:
-            print("  prepending index...")
+            print("  appending index...")
             final_writer = PdfWriter()
-            final_writer.append(index_path)
             final_writer.append(combined)
+            final_writer.append(index_path)
             final_writer.write(combined)
             final_writer.close()
             os.remove(index_path)
+
+    # Phase 4: page numbers on final combined (must be last so index gets numbers too)
+    if page_numbers:
+        print("  adding page numbers...")
+        _add_page_numbers_to_file(combined)
 
     print(f"\nDone: {combined}")
 

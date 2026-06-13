@@ -23,6 +23,8 @@ dependencies = [
     "redis",
     "whitenoise>=6.9.0",
     "mozilla-django-oidc>=5.0.2",
+    "weasyprint>=65.1",
+    "fpdf2>=2.8.2",
     "lancedb>=0.25,<0.26",
     "sentence-transformers>=2.7,<3",
     "torch",

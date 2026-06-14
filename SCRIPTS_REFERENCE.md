@@ -100,7 +100,8 @@ Combine all PDFs in a directory into a single binder PDF. Supports page numbers 
 uv run dc13_hive/scripts/build_binder_pdf.py <input_dir> [output_name] [options]
 
 Options:
-  -p, --page-numbers              Add centered page numbers at bottom
+  -p, --page-numbers              Add page numbers to each page
+  --page-position <pos>           "bottom" (default, centered) or "side" (right edge, binding-friendly)
   -i, --index                     Add alphabetical subject index
   --index-config <json_file>      Manual index cross-references
   -o, --output <name>             Custom output name (default: COMBINED_BINDER.pdf)
@@ -113,6 +114,9 @@ uv run dc13_hive/scripts/build_binder_pdf.py BINDER -p
 
 # Full: page numbers + index with manual entries
 uv run dc13_hive/scripts/build_binder_pdf.py BINDER -p -i --index-config my_index.json
+
+# Binding-friendly: page numbers on right edge
+uv run dc13_hive/scripts/build_binder_pdf.py BINDER -p --page-position side
 ```
 
 **Index JSON format:**

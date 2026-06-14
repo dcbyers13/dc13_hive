@@ -5,7 +5,8 @@ Usage:
     uv run dc13_hive/scripts/build_binder_pdf.py <input_dir> [output_name] [options]
 
 Options:
-    -p, --page-numbers     Add centered page numbers at bottom of each page
+    -p, --page-numbers     Add page numbers to each page
+    --page-position <pos>  Page number position: "bottom" (default, centered) or "side" (right edge, binding-friendly)
     -i, --index            Append alphabetical subject index (uses fpdf2)
     --index-config <json>  JSON file with manual index entries for cross-references
     -o, --output <name>    Output filename (default: COMBINED_BINDER.pdf)
@@ -31,7 +32,7 @@ from pypdf.annotations import FreeText
 PAGE_NUMBER_Y = 30
 PAGE_NUMBER_HEIGHT = 20
 PAGE_NUMBER_WIDTH = 90
-PAGE_NUMBER_RIGHT_PAD = 30  # distance from visual right edge
+PAGE_NUMBER_RIGHT_PAD = 12  # distance from visual right edge (~1/6", safe for most printers)
 
 
 def _doc_title_from_filename(basename):
@@ -41,8 +42,9 @@ def _doc_title_from_filename(basename):
     return name.replace("_", " ")
 
 
-def _add_page_numbers_to_file(filepath):
-    """Add centered page number annotations to every page of an existing PDF."""
+def _add_page_numbers_to_file(filepath, position="bottom"):
+    """Add page number annotations to every page of an existing PDF.
+    position: "bottom" (centered at bottom) or "side" (right edge, vertically centered)."""
     reader = PdfReader(filepath)
     writer = PdfWriter()
 
@@ -62,12 +64,19 @@ def _add_page_numbers_to_file(filepath):
         else:
             vw, vh = w, h
 
-        # Visual position: right side, vertically centered
-        vis_left = vw - PAGE_NUMBER_RIGHT_PAD - PAGE_NUMBER_WIDTH
-        vis_right = vw - PAGE_NUMBER_RIGHT_PAD
-        vis_center_y = vh / 2
-        vis_bottom = vis_center_y - PAGE_NUMBER_HEIGHT / 2
-        vis_top = vis_center_y + PAGE_NUMBER_HEIGHT / 2
+        # Visual position
+        if position == "side":
+            vis_left = vw - PAGE_NUMBER_RIGHT_PAD - PAGE_NUMBER_WIDTH
+            vis_right = vw - PAGE_NUMBER_RIGHT_PAD
+            vis_center_y = vh / 2
+            vis_bottom = vis_center_y - PAGE_NUMBER_HEIGHT / 2
+            vis_top = vis_center_y + PAGE_NUMBER_HEIGHT / 2
+        else:
+            # bottom-center (default)
+            vis_left = vw / 2 - PAGE_NUMBER_WIDTH / 2
+            vis_right = vw / 2 + PAGE_NUMBER_WIDTH / 2
+            vis_bottom = PAGE_NUMBER_Y
+            vis_top = PAGE_NUMBER_Y + PAGE_NUMBER_HEIGHT
 
         # Map from visual to unrotated PDF coordinates
         if rot == 90:
@@ -194,6 +203,7 @@ def build_binder(
     input_dir,
     output_name="COMBINED_BINDER.pdf",
     page_numbers=False,
+    page_position="bottom",
     index=False,
     index_config=None,
 ):
@@ -238,8 +248,9 @@ def build_binder(
 
     # Phase 4: page numbers on final combined (must be last so index gets numbers too)
     if page_numbers:
-        print("  adding page numbers...")
-        _add_page_numbers_to_file(combined)
+        pos = "bottom" if page_position == "bottom" else "side"
+        print(f"  adding page numbers ({pos} position)...")
+        _add_page_numbers_to_file(combined, pos)
 
     print(f"\nDone: {combined}")
 
@@ -252,6 +263,7 @@ if __name__ == "__main__":
     input_dir = sys.argv[1]
     output_name = "COMBINED_BINDER.pdf"
     page_numbers = False
+    page_position = "bottom"
     index = False
     index_config = None
 
@@ -260,6 +272,10 @@ if __name__ == "__main__":
         arg = sys.argv[i]
         if arg in ("-p", "--page-numbers"):
             page_numbers = True
+        elif arg == "--page-position":
+            i += 1
+            if i < len(sys.argv):
+                page_position = sys.argv[i]
         elif arg in ("-i", "--index"):
             index = True
         elif arg == "--index-config":
@@ -274,4 +290,4 @@ if __name__ == "__main__":
             output_name = arg
         i += 1
 
-    build_binder(input_dir, output_name, page_numbers, index, index_config)
+    build_binder(input_dir, output_name, page_numbers, page_position, index, index_config)

@@ -31,8 +31,8 @@ from pypdf.annotations import FreeText
 
 PAGE_NUMBER_Y = 30
 PAGE_NUMBER_HEIGHT = 20
-PAGE_NUMBER_WIDTH = 90
-PAGE_NUMBER_RIGHT_PAD = 12  # distance from visual right edge (~1/6", safe for most printers)
+PAGE_NUMBER_WIDTH = 60
+PAGE_NUMBER_RIGHT_PAD = 6  # distance from visual right edge
 
 
 def _doc_title_from_filename(basename):
@@ -164,6 +164,7 @@ def _build_index(files, output_dir, index_config_path, doc_ranges):
     font_family = "TimesUni" if use_unicode else "Times"
 
     pdf.add_page()
+    pdf.set_right_margin(20)
     pdf.set_auto_page_break(auto=True, margin=36)
     page_width = pdf.w - pdf.l_margin - pdf.r_margin
 

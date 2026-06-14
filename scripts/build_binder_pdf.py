@@ -24,6 +24,7 @@ Examples:
 import glob
 import json
 import os
+import re
 import sys
 import tempfile
 from pypdf import PdfReader, PdfWriter
@@ -142,6 +143,8 @@ def _build_index(files, output_dir, index_config_path, doc_ranges):
     sorted_keys = sorted(entries.keys(), key=lambda k: k.lower())
 
     def _sanitize(text):
+        # Strip emoji and other non-printable BMP chars
+        text = re.sub(r'[^\x00-\x7F\x80-\uFFFF]', '', text)
         return text.replace("\u2013", "-").replace("\u2014", "--") \
                    .replace("\u2018", "'").replace("\u2019", "'") \
                    .replace("\u201c", '"').replace("\u201d", '"') \

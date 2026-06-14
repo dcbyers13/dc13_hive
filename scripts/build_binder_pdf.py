@@ -31,6 +31,7 @@ from pypdf.annotations import FreeText
 PAGE_NUMBER_Y = 30
 PAGE_NUMBER_HEIGHT = 20
 PAGE_NUMBER_WIDTH = 90
+PAGE_NUMBER_RIGHT_PAD = 30  # distance from visual right edge
 
 
 def _doc_title_from_filename(basename):
@@ -61,11 +62,12 @@ def _add_page_numbers_to_file(filepath):
         else:
             vw, vh = w, h
 
-        # Visual position: bottom-center
-        vis_left = vw / 2 - PAGE_NUMBER_WIDTH / 2
-        vis_right = vw / 2 + PAGE_NUMBER_WIDTH / 2
-        vis_bottom = PAGE_NUMBER_Y
-        vis_top = PAGE_NUMBER_Y + 20
+        # Visual position: right side, vertically centered
+        vis_left = vw - PAGE_NUMBER_RIGHT_PAD - PAGE_NUMBER_WIDTH
+        vis_right = vw - PAGE_NUMBER_RIGHT_PAD
+        vis_center_y = vh / 2
+        vis_bottom = vis_center_y - PAGE_NUMBER_HEIGHT / 2
+        vis_top = vis_center_y + PAGE_NUMBER_HEIGHT / 2
 
         # Map from visual to unrotated PDF coordinates
         if rot == 90:

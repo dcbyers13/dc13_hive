@@ -28,12 +28,10 @@ import re
 import sys
 import tempfile
 from pypdf import PdfReader, PdfWriter
-from pypdf.annotations import FreeText
+from pypdf.generic import NameObject, NumberObject
 
 PAGE_NUMBER_Y = 30
-PAGE_NUMBER_HEIGHT = 20
-PAGE_NUMBER_WIDTH = 60
-PAGE_NUMBER_RIGHT_PAD = 6  # distance from visual right edge
+PAGE_NUMBER_RIGHT_PAD = 6  # distance from right edge
 
 
 def _doc_title_from_filename(basename):
@@ -43,71 +41,75 @@ def _doc_title_from_filename(basename):
     return name.replace("_", " ")
 
 
+def _fix_page_rotation(page):
+    """Strip /Rotate from a page by transforming content to be truly landscape."""
+    rot = page.get("/Rotate", 0)
+    if rot == 0:
+        return
+    mb = page.mediabox
+    pw, ph = float(mb.width), float(mb.height)
+    from pypdf import Transformation
+    if rot == 90:
+        page.add_transformation(Transformation((0, -1, 1, 0, 0, ph)))
+        page.mediabox.upper_right = (ph, pw)
+    elif rot == 270:
+        page.add_transformation(Transformation((0, 1, -1, 0, ph, 0)))
+        page.mediabox.upper_right = (ph, pw)
+    elif rot == 180:
+        page.add_transformation(Transformation((-1, 0, 0, -1, pw, ph)))
+    page[NameObject("/Rotate")] = NumberObject(0)
+
+
 def _add_page_numbers_to_file(filepath, position="bottom"):
-    """Add page number annotations to every page of an existing PDF.
-    position: "bottom" (centered at bottom) or "side" (right edge, vertically centered)."""
+    """Stamp page numbers by merging an fpdf2 watermark. Fixes page rotations first."""
+    from fpdf import FPDF
     reader = PdfReader(filepath)
     writer = PdfWriter()
-
-    # Use append to preserve outlines/bookmarks
     writer.append(reader)
 
-    for i in range(len(reader.pages)):
-        page = writer.pages[i]
-        mb = page.mediabox
-        rot = page.get("/Rotate", 0)
-        w = float(mb.width)
-        h = float(mb.height)
+    # Fix all page rotations first so every page is unrotated landscape
+    for i in range(len(writer.pages)):
+        _fix_page_rotation(writer.pages[i])
 
-        # Visual coordinate system dimensions
-        if rot in (90, 270):
-            vw, vh = h, w
-        else:
-            vw, vh = w, h
+    ttf_path = None
+    for p in [
+        "/System/Library/Fonts/Supplemental/Times New Roman.ttf",
+        "/System/Library/Fonts/Times.ttc",
+    ]:
+        if os.path.exists(p):
+            ttf_path = p
+            break
 
-        # Visual position
-        if position == "side":
-            vis_left = vw - PAGE_NUMBER_RIGHT_PAD - PAGE_NUMBER_WIDTH
-            vis_right = vw - PAGE_NUMBER_RIGHT_PAD
-            vis_center_y = vh / 2
-            vis_bottom = vis_center_y - PAGE_NUMBER_HEIGHT / 2
-            vis_top = vis_center_y + PAGE_NUMBER_HEIGHT / 2
-        else:
-            # bottom-center (default)
-            vis_left = vw / 2 - PAGE_NUMBER_WIDTH / 2
-            vis_right = vw / 2 + PAGE_NUMBER_WIDTH / 2
-            vis_bottom = PAGE_NUMBER_Y
-            vis_top = PAGE_NUMBER_Y + PAGE_NUMBER_HEIGHT
+    tmpdir = tempfile.mkdtemp()
+    try:
+        for i in range(len(writer.pages)):
+            page = writer.pages[i]
+            mb = page.mediabox
+            pw, ph = float(mb.width), float(mb.height)
 
-        # Map from visual to unrotated PDF coordinates
-        if rot == 90:
-            x1 = h - vis_top
-            y1 = vis_left
-            x2 = h - vis_bottom
-            y2 = vis_right
-        elif rot == 270:
-            x1 = vis_bottom
-            y1 = h - vis_right
-            x2 = vis_top
-            y2 = h - vis_left
-        else:
-            x1 = vis_left
-            y1 = vis_bottom
-            x2 = vis_right
-            y2 = vis_top
+            pdf = FPDF(unit="pt", format=(pw, ph))
+            pdf.add_page()
+            if ttf_path:
+                pdf.add_font("PN", "", ttf_path)
+                pdf.set_font("PN", size=10)
+            else:
+                pdf.set_font("Times", size=10)
 
-        num = i + 1
-        text = f"- {num} -"
+            num_text = f"- {i+1} -"
 
-        ft = FreeText(
-            text=text,
-            rect=(x1, y1, x2, y2),
-            font="Times-Roman",
-            font_size=9,
-            border_color=None,
-            background_color=None,
-        )
-        writer.add_annotation(page_number=i, annotation=ft)
+            if position == "side":
+                pdf.text(pw - 42, ph / 2 + 4, num_text)
+            else:
+                tw = pdf.get_string_width(num_text)
+                pdf.text((pw - tw) / 2, PAGE_NUMBER_Y, num_text)
+
+            tmp_path = os.path.join(tmpdir, f"p{i:04d}.pdf")
+            pdf.output(tmp_path)
+            wm = PdfReader(tmp_path)
+            page.merge_page(wm.pages[0], over=True)
+    finally:
+        import shutil
+        shutil.rmtree(tmpdir)
 
     writer.write(filepath)
     writer.close()
@@ -188,14 +190,22 @@ def _build_index(files, output_dir, index_config_path, doc_ranges):
         indent = 12
         label = f"     {_sanitize(key)}"
         pages = _sanitize(entries[key])
-        pdf.set_font(font_family, size=11)
-        label_w = pdf.get_string_width(label)
+        pdf.set_font(font_family, size=8)
         pages_w = pdf.get_string_width(pages) + 4
-        avail = page_width - indent
+        avail_w = page_width - indent - pages_w - 8
 
-        pdf.cell(indent, 6, "")
-        pdf.cell(avail - pages_w, 6, label, align="L")
-        pdf.cell(pages_w, 6, pages, align="R", new_x="LMARGIN", new_y="NEXT")
+        label_start_x = pdf.l_margin + indent
+        label_start_y = pdf.get_y()
+
+        pdf.set_xy(label_start_x, label_start_y)
+        pdf.multi_cell(avail_w, 4, label, align="L")
+        label_end_y = pdf.get_y()
+
+        pdf.set_xy(label_start_x + avail_w + 4, label_start_y)
+        pdf.cell(pages_w, 4, pages, align="R", new_x="LMARGIN", new_y="NEXT")
+
+        if label_end_y > label_start_y + 4:
+            pdf.set_y(max(pdf.get_y(), label_end_y))
 
     index_path = os.path.join(output_dir, "__index.pdf")
     pdf.output(index_path)

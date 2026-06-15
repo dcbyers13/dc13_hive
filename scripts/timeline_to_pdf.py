@@ -25,24 +25,29 @@ Usage:
 
 Options:
     --orientation {landscape,portrait}   Page orientation (default: landscape)
-    --margin <in>                        Page margin (default: 0.72)
+    --margin <in>                        Page margin (default: 0.70)
     --font-size <pt>                     Base body font size (default: 12)
     --first-paragraph-size <pt>          Font size for first paragraph/subheading (default: 13)
     --case-name <text>                   Case name for header
     --case-number <text>                 Case number for header
     --prepared-by <text>                 Prepared-by line for header
-    --no-header                          Omit header text
+    --no-header                          Omit page header text (case name, prepared-by)
     --no-footer                          Omit page number footer
     --no-citation-manifest               Skip citation manifest generation
+    --table-of-contents                  Prepend a table of contents page
+    --non-standard                       Uniform table font, equal-width columns, handles up to 6 cols
 
 Examples:
     uv run timeline_to_pdf.py DISRUPTION_SUMMARY_GAL.md
     uv run timeline_to_pdf.py DISRUPTION_SUMMARY_GAL.md --margin 0.5 --font-size 11
     uv run timeline_to_pdf.py DISRUPTION_SUMMARY_GAL.md --orientation portrait
+    uv run timeline_to_pdf.py DISRUPTION_SUMMARY_GAL.md --table-of-contents
+    uv run timeline_to_pdf.py DISRUPTION_SUMMARY_GAL.md --table-of-contents --non-standard
 """
 
 import sys
 import json
+import re
 import argparse
 import markdown
 from weasyprint import HTML, CSS
@@ -52,9 +57,39 @@ CASE_NAME = "BYERS v. DONATELLO"
 CASE_NUMBER = "Case No: 25FA152"
 PREPARED_BY = "Prepared by: David Byers"
 ORIENTATION = "landscape"
-MARGIN = "0.72"
+MARGIN = "0.70"
 FONT_SIZE = 12
 FIRST_P_SIZE = 13
+
+
+def _build_toc_html(html_content, toc_title="TABLE OF CONTENTS"):
+    """Parse headings from HTML and return a TOC page as HTML."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    headings = []
+    for el in soup.find_all(["h1", "h2", "h3"]):
+        text = el.get_text().strip()
+        level = int(el.name[1])
+        headings.append((level, text))
+
+    if not headings:
+        return ""
+
+    indent_map = {1: 0, 2: 20, 3: 40}
+    toc_lines = []
+    toc_lines.append("<div style='font-size: 13pt; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 10px;'>TABLE OF CONTENTS</div>")
+    toc_lines.append("<ul style='list-style: none; padding: 0;'>")
+
+    for level, text in headings:
+        indent = indent_map.get(level, 0)
+        style = f"margin-left: {indent}px;"
+        if level == 1:
+            style += " font-weight: bold; margin-top: 6px;"
+        toc_lines.append(f"  <li style='{style}'>{text}</li>")
+
+    toc_lines.append("</ul>")
+    return "\n".join(toc_lines)
 
 
 def convert_md_to_pdf(
@@ -70,6 +105,8 @@ def convert_md_to_pdf(
     no_header=False,
     no_footer=False,
     no_citation_manifest=False,
+    table_of_contents=False,
+    non_standard=False,
 ):
     citation_manifest = {}
     current_section = None
@@ -79,7 +116,13 @@ def convert_md_to_pdf(
         with open(input_file, "r", encoding="utf-8") as f:
             md_text = f.read()
 
-        html_content = markdown.markdown(md_text, extensions=["tables"])
+
+        html_content = markdown.markdown(md_text, extensions=["tables", "fenced_code"])
+
+        if table_of_contents:
+            toc_html = _build_toc_html(html_content)
+            if toc_html:
+                html_content = toc_html + "\n<hr style='page-break-after: always;'>\n" + html_content
 
         if not no_citation_manifest:
             from bs4 import BeautifulSoup
@@ -105,6 +148,55 @@ def convert_md_to_pdf(
         top_left = f'content: "{case_name}\\A {case_number}";' if not no_header else "content: '';"
         top_right = f'content: "{prepared_by}";' if not no_header else "content: '';"
         bottom_right = 'content: "Page " counter(page) " of " counter(pages)";' if not no_footer else "content: '';"
+
+        table_css = f"""
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                table-layout: fixed;
+            }}
+
+            tr {{ break-inside: avoid; page-break-inside: avoid; }}
+
+            th, td {{
+                border: 1pt solid black;
+                padding: 6px;
+                vertical-align: top;
+                word-break: break-all;
+            }}
+            th {{ background-color: #f0f0f0; font-weight: bold; }}
+
+            /* Standard column widths */
+            th:nth-child(1), td:nth-child(1) {{ width: 10%; }}
+            th:nth-child(2), td:nth-child(2) {{ width: 25%; }}
+            th:nth-child(3), td:nth-child(3) {{ width: 10%; }}
+            th:nth-child(4), td:nth-child(4) {{ width: 25%; }}
+
+            th:nth-child(5), td:nth-child(5) {{ width: 25%; }}
+            th:nth-child(6), td:nth-child(6) {{ width: 5%; }}
+        """
+
+        if non_standard:
+            table_css = f"""
+                table {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    table-layout: fixed;
+                }}
+
+                tr {{ break-inside: avoid; page-break-inside: avoid; }}
+
+                th, td {{
+                    border: 1pt solid black;
+                    padding: 4px;
+                    vertical-align: top;
+                    overflow-wrap: break-word;
+                    word-wrap: break-word;
+                    font-size: {font_size}pt;
+                    font-family: serif;
+                }}
+                th {{ background-color: #f0f0f0; font-weight: bold; }}
+            """
 
         custom_css = CSS(string=f"""
             @page {{
@@ -144,23 +236,27 @@ def convert_md_to_pdf(
                 font-size: {first_paragraph_size}pt;
             }}
 
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                table-layout: fixed;
+            {table_css}
+
+            /* Code blocks */
+            pre {{
+                font-family: "Courier New", Courier, monospace;
+                font-size: {font_size}pt;
+                line-height: 1.4;
+                white-space: pre;
+                overflow: visible;
+                background: #f8f8f8;
+                border: 1pt solid #ddd;
+                padding: 8px;
+            }}
+            code {{
+                font-family: "Courier New", Courier, monospace;
+                font-size: {font_size}pt;
             }}
 
-            tr {{ break-inside: avoid; page-break-inside: avoid; }}
-
-            th, td {{ border: 1pt solid black; padding: 6px; vertical-align: top; word-break: break-all; }}
-            th {{ background-color: #f0f0f0; font-weight: bold; }}
-
-            /* Column Widths */
-            th:nth-child(1), td:nth-child(1) {{ width: 10%; }}
-            th:nth-child(2), td:nth-child(2) {{ width: 25%; }}
-            th:nth-child(3), td:nth-child(3) {{ width: 10%; }}
-            th:nth-child(4), td:nth-child(4) {{ width: 25%; font-family: monospace; font-size: 8pt; }}
-            th:nth-child(5), td:nth-child(5) {{ width: 25%; }}
+            /* TOC styling */
+            ul {{ line-height: 1.6; }}
+            li {{ font-family: serif; font-size: {font_size}pt; }}
         """)
 
         HTML(string=html_content).write_pdf(output_file, stylesheets=[custom_css])
@@ -192,9 +288,11 @@ if __name__ == "__main__":
     parser.add_argument("--case-name", default=CASE_NAME)
     parser.add_argument("--case-number", default=CASE_NUMBER)
     parser.add_argument("--prepared-by", default=PREPARED_BY)
-    parser.add_argument("--no-header", action="store_true")
+    parser.add_argument("--no-header", action="store_true", help="Omit case name/prepared-by from page header")
     parser.add_argument("--no-footer", action="store_true")
     parser.add_argument("--no-citation-manifest", action="store_true")
+    parser.add_argument("--table-of-contents", action="store_true", help="Prepend a table of contents page")
+    parser.add_argument("--non-standard", action="store_true", help="Uniform table font, equal-width columns, handles up to 6 cols")
 
     args = parser.parse_args()
 
@@ -213,4 +311,6 @@ if __name__ == "__main__":
         no_header=args.no_header,
         no_footer=args.no_footer,
         no_citation_manifest=args.no_citation_manifest,
+        table_of_contents=args.table_of_contents,
+        non_standard=args.non_standard,
     )

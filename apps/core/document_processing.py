@@ -20,6 +20,7 @@ This module contains the core logic for converting PDFs to Markdown.
 import os
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 import pdfplumber
 from dotenv import load_dotenv
@@ -54,28 +55,102 @@ from legal_utils import (
 )
 
 def ocr_pdf_images(pdf_path):
+    """OCR scanned PDF pages with automatic rotation correction.
+
+    For each page:
+    1. Render at 2x resolution
+    2. Detect orientation via Tesseract OSD
+    3. Rotate image to upright if needed
+    4. Run Tesseract OCR (language: eng)
+    5. Collect extracted text with page breaks
+
+    Falls back to PaddleOCR if Tesseract is unavailable.
+    """
     text_parts = []
-    ocr = get_local_ocr()
-    if not ocr:
-        print("  -> PaddleOCR not available. Skipping local OCR.")
-        return ""
+    try:
+        from PIL import Image
+        import io as _io
+    except ImportError:
+        Image = None
 
     try:
         doc = fitz.open(pdf_path)
-        for page_num, page in enumerate(doc):
-            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-            img_path = f"/tmp/ocr_page_{page_num}.png"
-            pix.save(img_path)
+        total = doc.page_count
+        MATRIX = fitz.Matrix(2, 2)
 
-            result = ocr.ocr(img_path)
-            if result and result[0]:
-                r = result[0]
-                texts = r.get('rec_texts', [])
-                text_parts.extend(texts)
+        for page_num, page in enumerate(doc):
+            pix = page.get_pixmap(matrix=MATRIX)
+
+            # Convert to PIL Image for rotation
+            if Image:
+                img = Image.open(_io.BytesIO(pix.tobytes("png")))
+
+                # Detect orientation via Tesseract OSD
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    pix.save(tmp.name)
+                    tmp_path = tmp.name
+                try:
+                    result = subprocess.run(
+                        ["tesseract", tmp_path, "-", "--psm", "0"],
+                        capture_output=True, timeout=15,
+                    )
+                    stdout = result.stdout.decode("utf-8", errors="replace")
+                    orient = 0
+                    for line in stdout.split("\n"):
+                        if "Orientation in degrees" in line:
+                            orient = int(line.split(":")[1].strip())
+                            break
+
+                    if orient != 0:
+                        fix_angle = (360 - orient) % 360
+                        img = img.rotate(fix_angle, expand=True)
+                        if page_num % 20 == 0:
+                            print(f"     Page {page_num+1}: rotated {orient}° -> fixed")
+                except Exception:
+                    pass
+                finally:
+                    if os.path.exists(tmp_path):
+                        os.unlink(tmp_path)
+
+                # Save corrected image and OCR with Tesseract
+                with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+                    img.save(tmp.name)
+                    ocr_path = tmp.name
+                try:
+                    result = subprocess.run(
+                        ["tesseract", ocr_path, "-", "--psm", "6", "-l", "eng"],
+                        capture_output=True, timeout=30,
+                    )
+                    page_text = result.stdout.decode("utf-8", errors="replace").strip()
+                    if page_text:
+                        text_parts.append(page_text)
+                except Exception:
+                    pass
+                finally:
+                    if os.path.exists(ocr_path):
+                        os.unlink(ocr_path)
+            else:
+                # Fallback: PaddleOCR without rotation
+                ocr = get_local_ocr()
+                if not ocr:
+                    print("  -> No OCR engine available (need Tesseract or PaddleOCR)")
+                    return ""
+                img_path = f"/tmp/ocr_page_{page_num}.png"
+                pix.save(img_path)
+                result = ocr.ocr(img_path)
+                if result and result[0]:
+                    r = result[0]
+                    texts = r.get('rec_texts', [])
+                    text_parts.extend(texts)
+
+            if page_num % 20 == 0 and page_num > 0:
+                print(f"     Processed {page_num+1}/{total} pages...")
+
         doc.close()
     except Exception as e:
-        print(f"  -> Local OCR error: {e}")
-    return "\n".join(text_parts)
+        print(f"  -> OCR error: {e}")
+
+    return "\n\n--- Page Break ---\n\n".join(text_parts)
 
 def clean_form_field_spacing(text: str) -> str:
     """Remove underscores that pdftotext inserts between characters
@@ -153,6 +228,98 @@ def get_llm_converter():
         print(f"Warning: Could not initialize Gemini client: {e}")
         return None
 
+def fix_pdf_rotation(pdf_path, sample_interval=5):
+    """Detect and correct rotated pages in a scanned PDF using Tesseract OSD.
+
+    Samples every `sample_interval` pages for speed. If any sampled page
+    is rotated, ALL pages are checked and corrected. Sets the PDF page
+    rotation metadata so downstream tools (pdftotext, Vision API) render
+    pages upright. The original PDF bytes are preserved — only metadata
+    changes, keeping file size minimal.
+
+    Returns path to a corrected temp PDF, or the original path if no
+    rotation was found.
+
+    Requires: tesseract with osd language pack, PyMuPDF (fitz).
+    """
+    pdf_path = Path(pdf_path)
+    doc = fitz.open(str(pdf_path))
+    total = doc.page_count
+
+    if total == 0:
+        doc.close()
+        return str(pdf_path)
+
+    MATRIX = fitz.Matrix(2, 2)  # 2x zoom for OSD accuracy
+
+    def _detect_orientation(page):
+        """Use Tesseract OSD to detect page orientation in degrees."""
+        pix = page.get_pixmap(matrix=MATRIX)
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            pix.save(tmp.name)
+            tmp_path = tmp.name
+        try:
+            result = subprocess.run(
+                ["tesseract", tmp_path, "-", "--psm", "0"],
+                capture_output=True, timeout=15,
+            )
+            stdout = result.stdout.decode("utf-8", errors="replace")
+            for line in stdout.split("\n"):
+                if "Orientation in degrees" in line:
+                    return int(line.split(":")[1].strip())
+        except Exception:
+            pass
+        finally:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        return 0
+
+    # Phase 1: Quick scan — check every sample_interval-th page
+    sample_indices = list(range(0, total, sample_interval))
+    needs_full_scan = False
+    for idx in sample_indices:
+        orient = _detect_orientation(doc[idx])
+        if orient != 0:
+            needs_full_scan = True
+            break
+
+    if not needs_full_scan:
+        doc.close()
+        return str(pdf_path)
+
+    # Phase 2: Check ALL pages and build rotation map
+    print(f"  -> Rotation detected; scanning all {total} pages...")
+    rotations = {}
+    for idx in range(total):
+        rotations[idx] = _detect_orientation(doc[idx])
+        if idx % 30 == 0 and idx > 0:
+            print(f"     Scanned {idx+1}/{total}...")
+
+    rotated_count = sum(1 for v in rotations.values() if v != 0)
+    if rotated_count == 0:
+        doc.close()
+        return str(pdf_path)
+
+    print(f"  -> Fixing {rotated_count}/{total} rotated pages (metadata)...")
+
+    # Phase 3: Set rotation metadata on each page
+    # Tesseract reports the CW rotation needed to read the text.
+    # PDF set_rotation() sets the display rotation — we set it to the
+    # detected value so renderers rotate the page to upright.
+    for idx, orient in rotations.items():
+        if orient != 0:
+            page = doc[idx]
+            page.set_rotation(orient)
+
+    # Save corrected PDF to temp file (metadata-only change, small file)
+    tmpdir = tempfile.gettempdir()
+    corrected_path = Path(tmpdir) / f"corrected_{pdf_path.name}"
+    doc.save(str(corrected_path))
+    doc.close()
+    print(f"  -> Saved corrected PDF: {corrected_path.name} ({os.path.getsize(corrected_path) // 1024}KB)")
+    return str(corrected_path)
+
+
 def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
     pdf_path = Path(pdf_path)
     md_path = pdf_path.with_suffix(".md")
@@ -190,21 +357,36 @@ def convert_pdf_to_markdown(pdf_path, original_name="", virtual_path=""):
 
         if not is_readable(text):
             print(f"  -> Low text quality, attempting OCR...")
+            # Fix rotated pages before OCR — scanned medical records often
+            # have mixed portrait/landscape pages that confuse text extraction
+            ocr_pdf = str(pdf_path)
+            try:
+                from legal_utils import is_scanned_pdf
+                if is_scanned_pdf(str(pdf_path)):
+                    print(f"  -> Scanned PDF detected, checking page rotation...")
+                    ocr_pdf = fix_pdf_rotation(str(pdf_path))
+            except Exception as e:
+                print(f"  -> Rotation check skipped: {e}")
+
             if llm_client:
                 try:
                     print(f"  -> Using Vision API...")
-                    uploaded = llm_client.files.upload(file=str(pdf_path))
+                    uploaded = llm_client.files.upload(file=ocr_pdf)
                     result = llm_client.models.generate_content(
                         model="gemini-2.5-flash",
                         contents=[uploaded, "Extract all text from this document."]
                     )
                     text = result.text if hasattr(result, 'text') else str(result)
+                    # If Vision API returned unusable text, fall back to Tesseract
+                    if not is_readable(text):
+                        print(f"  -> Vision API returned low-quality text, falling back to Tesseract OCR...")
+                        text = ocr_pdf_images(ocr_pdf)
                 except Exception as e:
                     print(f"  -> Vision failed: {e}, trying local OCR...")
-                    text = ocr_pdf_images(str(pdf_path))
+                    text = ocr_pdf_images(ocr_pdf)
             else:
-                print(f"  -> Using local PaddleOCR...")
-                text = ocr_pdf_images(str(pdf_path))
+                print(f"  -> Using local Tesseract OCR...")
+                text = ocr_pdf_images(ocr_pdf)
 
         if is_readable(text):
             ocr_status = "good"

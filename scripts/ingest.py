@@ -652,7 +652,7 @@ def convert_via_sync_legal(pdf_path: Path) -> tuple[Path | None, str, str]:
             ["uv", "run", str(SYNC_SCRIPT), str(pdf_path)],
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=1800,
             check=True,
         )
         if md_path.exists():
@@ -1240,8 +1240,6 @@ def main():
     print()
 
     if "--library-report" in sys.argv:
-        from pathlib import Path
-
         report_lines = []
         report_lines.append("# Library Audit Report\n")
         report_lines.append(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")

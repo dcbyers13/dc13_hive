@@ -34,9 +34,17 @@ load_dotenv(Path(__file__).parent.parent / '.env')
 # ---------------------------------------------------------------------------
 
 def is_readable(text):
-    """Check if text contains enough readable content."""
+    """Check if text contains enough readable content.
+
+    Strips page break markers, OCR artifacts, and form lines before
+    counting words to avoid false positives from separator-only text
+    (e.g. a scanned PDF that only produces '--- Page Break ---' markers).
+    """
+    # Remove page break markers and structural separators
+    cleaned = re.sub(r'---\s*Page\s*Break\s*---', '', text)
+    cleaned = re.sub(r'#+\s*Structural\s*Path\s*Context.*?---', '', cleaned, flags=re.DOTALL)
     # Remove common OCR artifacts and form lines
-    cleaned = re.sub(r'[\u25c8\u25c6\u2610\u2611\u2612\u2713\u2717\u2714Xx_\n\r\t]+', '', text)
+    cleaned = re.sub(r'[\u25c8\u25c6\u2610\u2611\u2612\u2713\u2717\u2714Xx_\n\r\t]+', '', cleaned)
     cleaned = re.sub(r'\s+', ' ', cleaned)
     if len(cleaned.strip()) < 50:
         return False

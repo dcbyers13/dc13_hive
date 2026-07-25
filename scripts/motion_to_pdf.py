@@ -114,7 +114,7 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 font-weight: bold !important;
                 text-align: left !important;
                 margin-top: 0 !important;
-                margin-bottom: 2pt !important;
+                margin-bottom: 32pt !important;
                 line-height: 1.2 !important;
             }}
 

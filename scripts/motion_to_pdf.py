@@ -4,8 +4,14 @@
 # ///
 
 """
-Convert markdown legal motion drafts into DeKalb County court-ready PDFs 
+Convert markdown legal motion drafts into DeKalb County court-ready PDFs
 matching Petitioner's exact Sans-Serif 16pt/14pt/13pt/12pt typography hierarchy.
+
+Typography Hierarchy:
+  - Court Header: 16pt Bold
+  - Case Number:  13pt Regular (Unbolded)
+  - Motion Title: 14pt Bold (ALL CAPS)
+  - Body / Headings / Lists: 12pt
 
 Usage:
     uv run dc13_hive/scripts/motion_to_pdf.py <input.md> [output.pdf] [options]
@@ -20,39 +26,50 @@ from weasyprint import HTML, CSS
 
 def transform_pleading_structure(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
-    
-    # Tag pleading components structurally based on text content
+
+    # State flag to restrict caption/title tagging strictly to the top header area
+    in_header_zone = True
+
     for p in soup.find_all(["p", "h1", "h2", "h3"]):
         text = p.get_text().strip()
-        
-        # 1. Top Court Header Line (16pt Bold)
-        if "IN THE CIRCUIT COURT" in text.upper():
-            p['class'] = p.get('class', []) + ['court-header']
-            
-        # 2. Case Number Line (13pt Regular, Unbolded)
-        elif re.search(r'Case\s+No\.?\s*[\d\w]+', text, re.IGNORECASE):
-            p['class'] = p.get('class', []) + ['case-number']
-            # Remove inner <strong> tags to unbold the case number line
-            for strong in p.find_all("strong"):
-                strong.unwrap()
-                
-        # 3. Motion Title (14pt Bold)
-        elif ("EMERGENCY MOTION" in text.upper() or "PETITIONER'S" in text.upper() or "MOTION FOR" in text.upper() or "PETITION FOR" in text.upper()) and "CIRCUIT COURT" not in text.upper():
-            p['class'] = p.get('class', []) + ['motion-title']
-            
-        # 4. Roman Numeral Section Headings (12pt Bold - No Jumbo)
-        elif re.match(r'^(I|II|III|IV|V|VI|VII|VIII|IX|X)\.\s+', text):
-            p['class'] = p.get('class', []) + ['section-heading']
-            
-        # 5. Lettered Subsection Headings (12pt Bold)
-        elif re.match(r'^[A-Z]\.\s+', text) and len(text) < 100:
-            p['class'] = p.get('class', []) + ['subsection-heading']
+        text_upper = text.upper()
 
-    # Insert signature line spacing (2 empty lines above name)
+        # Exit header zone immediately upon encountering body preamble or Section I
+        if text_upper.startswith("NOW COMES") or re.match(r'^(I|1)\.\s+', text):
+            in_header_zone = False
+
+        if in_header_zone:
+            # 1. Top Court Header Line (16pt Bold)
+            if "IN THE CIRCUIT COURT" in text_upper:
+                p['class'] = p.get('class', []) + ['court-header']
+
+            # 2. Case Number Line (13pt Regular, Unbolded)
+            elif re.search(r'Case\s+No\.?\s*[\d\w]+', text, re.IGNORECASE):
+                p['class'] = p.get('class', []) + ['case-number']
+                # Strip all inner strong and b tags to force regular weight
+                for tag in p.find_all(["strong", "b"]):
+                    tag.unwrap()
+
+            # 3. Motion Title (14pt Bold) - Only applied inside header zone
+            # Use \b word boundaries so "PETITION" doesn't false-match "PETITIONER" in party names
+            elif any(re.search(r'\b' + kw + r'\b', text_upper) for kw in ["MOTION", "PETITION", "ORDER", "RESPONSE", "REPLY"]) and "CIRCUIT COURT" not in text_upper:
+                p['class'] = p.get('class', []) + ['motion-title']
+                in_header_zone = False  # Title found; close header zone
+        else:
+            # 4. Roman Numeral Section Headings (12pt Bold)
+            if re.match(r'^(I|II|III|IV|V|VI|VII|VIII|IX|X)\.\s+', text):
+                p['class'] = p.get('class', []) + ['section-heading']
+
+            # 5. Lettered Subsection Headings (12pt Bold)
+            elif re.match(r'^[A-Z]\.\s+', text) and len(text) < 120:
+                p['class'] = p.get('class', []) + ['subsection-heading']
+
+    # Insert signature line spacing ONLY on standalone signature lines
     for p in soup.find_all("p"):
-        if "DAVID C. BYERS" in p.get_text() and not p.find("br"):
-            p.insert(0, BeautifulSoup("<br/><br/>", "html.parser"))
-            
+        text_clean = p.get_text().strip()
+        if text_clean in ["DAVID C. BYERS", "**DAVID C. BYERS**"]:
+            p.insert(0, BeautifulSoup("<br/><br/><br/>", "html.parser"))
+
     return str(soup)
 
 def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
@@ -91,8 +108,8 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 text-align: justify;
             }}
 
-            /* 1. Court Caption Header (16pt Bold) */
-            .court-header {{
+            /* 1. Main Court Header (16pt Bold) */
+            .court-header, .court-header strong, .court-header b {{
                 font-size: 16pt !important;
                 font-weight: bold !important;
                 text-align: left !important;
@@ -101,17 +118,18 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 line-height: 1.2 !important;
             }}
 
-            /* 2. Case Number Line (13pt Regular, Unbolded) */
-            .case-number {{
+            /* 2. Case Number Line (13pt Regular, Strictly Unbolded) */
+            .case-number, .case-number * {{
                 font-size: 13pt !important;
                 font-weight: normal !important;
+                text-decoration: none !important;
                 text-align: left !important;
                 margin-top: 2pt !important;
                 margin-bottom: 12pt !important;
             }}
 
-            /* 3. Document / Motion Title (14pt Bold) */
-            .motion-title {{
+            /* 3. Motion Title (14pt Bold) */
+            .motion-title, .motion-title strong, .motion-title b {{
                 font-size: 14pt !important;
                 font-weight: bold !important;
                 text-align: left !important;
@@ -143,7 +161,7 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 break-after: avoid;
             }}
 
-            /* Lists & Nested Formatting */
+            /* Lists & Body Formatting (12pt Default) */
             ul, ol {{
                 margin-top: 0;
                 margin-bottom: 8pt;
@@ -153,45 +171,20 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
             li {{
                 margin-bottom: 4pt;
                 font-size: 12pt;
-                word-wrap: break-word;
-                hypens: auto;
+                overflow-wrap: break-word;
+                hyphens: auto;
             }}
 
-            /* Nested list items (for hospital names, etc.) */
-            li li {{
+            li li, li li li {{
                 padding-left: 10pt;
-                word-wrap: break-word;
-                hypens: auto;
+                overflow-wrap: break-word;
+                hyphens: auto;
             }}
 
-            li li li {{
-                padding-left: 10pt;
-                word-wrap: break-word;
-                hypens: auto;
-            }}
-
-            /* Force word wrap for long bold text in lists */
-            li strong {{
-                word-wrap: break-word !important;
-                hypens: auto !important;
-                display: inline !important;
-                overflow-wrap: break-word !important;
-                word-break: break-all !important;
-            }}
-
-            /* Ensure nested bold text remains 12pt and wraps properly */
-            strong {{
+            strong, li strong {{
                 font-size: 12pt;
-                word-wrap: break-word !important;
                 overflow-wrap: break-word !important;
-            }}
-
-            .court-header strong {{
-                font-size: 16pt !important;
-            }}
-
-            .motion-title strong {{
-                font-size: 14pt !important;
+                display: inline !important;
             }}
 
             /* Verification & Certificate Blocks */
@@ -200,7 +193,7 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 break-inside: avoid;
             }}
 
-            /* Table Formatting for Motion Backlog */
+            /* Table Formatting */
             table {{
                 width: 100%;
                 border-collapse: collapse;
@@ -213,6 +206,8 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 padding: 4pt;
                 text-align: left;
                 vertical-align: top;
+                overflow-wrap: break-word;
+                hyphens: auto;
             }}
 
             th {{
@@ -221,18 +216,11 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
                 padding: 6pt 4pt;
             }}
 
-            /* Column width constraints */
-            th:nth-child(1), td:nth-child(1) {{ width: 8%; }}      /* # column */
-            th:nth-child(2), td:nth-child(2) {{ width: 35%; }}     /* Motion Title column */
-            th:nth-child(3), td:nth-child(3) {{ width: 25%; }}     /* Primary Statutes column */
-            th:nth-child(4), td:nth-child(4) {{ width: 27%; }}     /* Core Argument column */
-            th:nth-child(5), td:nth-child(5) {{ width: 5%; }}      /* Status column */
-
-            /* Enable word wrapping in table cells */
-            td {{
-                word-wrap: break-word;
-                hypens: auto;
-            }}
+            th:nth-child(1), td:nth-child(1) {{ width: 8%; }}
+            th:nth-child(2), td:nth-child(2) {{ width: 35%; }}
+            th:nth-child(3), td:nth-child(3) {{ width: 25%; }}
+            th:nth-child(4), td:nth-child(4) {{ width: 27%; }}
+            th:nth-child(5), td:nth-child(5) {{ width: 5%; }}
         """)
 
         HTML(string=html_tagged).write_pdf(output_file, stylesheets=[custom_css])

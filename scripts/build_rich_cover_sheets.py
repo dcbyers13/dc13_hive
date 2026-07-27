@@ -62,7 +62,7 @@ MOTION_FILENAMES = {
 EXHIBIT_DATA = {
     1: {
         "A": {"description": "August 3, 2022 Allocation Judgment — Sections 2 & 8 (Shared Decision-Making & Equal Records Access)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
-        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — C-SSRS Discharge Screener, Psychosocial Assessment, Discharge Care Plan, Daily Notes", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — C-SSRS Discharge Screener, Psychosocial Assessment, Discharge Care Plan, Daily Notes", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records", "confidential": True},
         "D": {"description": "Kane County Case No. 23DT666 Criminal Conviction and Mandatory Remand Order (Sept 15–22, 2026 incarceration)", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/23DT666_DUI_CONVICTION.pdf", "category": "Legal Documents"},
         "E": {"description": "Annie Barsch, MA, LMFT Reunification Therapy Protocol and Eligibility Confirmation (Mind Matters, Elburn, IL)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
         "F": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — documentation of ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
@@ -72,14 +72,14 @@ EXHIBIT_DATA = {
     },
     2: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Sections 2 & 8 — Records Access & Shared Decision-Making)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
-        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal medical gatekeeping, medication obstruction, and \"constant\" suicidal ideation", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal medical gatekeeping, medication obstruction, and \"constant\" suicidal ideation", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records", "confidential": True},
         "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — therapy abandoned, file closed, Respondent unreachable; perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
         "E": {"description": "Annie Barsch, MA, LMFT Intake Protocol (Trauma-Informed Reunification Therapy)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_INTAKE.pdf", "category": "Therapy Documents"},
         "F": {"description": "740 ILCS 110/4(a)(3) & 4(b) (Mental Health Records Disclosure Authority)", "source_path": "LEGAL_FILE/02_EXHIBITS/STATUTES/740_ILCS_110.pdf", "category": "Statutes"},
         "G": {"description": "Timeline of Clinical Gatekeeping (Daybreak, Streamwood, CenterPointe, Ellie, BGC)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CLINICAL_GATEKEEPING_TIMELINE.pdf", "category": "Medical Records"},
-        "H": {"description": "Ben Gordon Center March 11, 2025 IATP (Court-Ordered Individual Therapy Mandate)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_IATP_2025.pdf", "category": "Therapy Documents"},
-        "I": {"description": "NW Medicine Psychiatry Intake Note (March 11, 2025) — \"Counselor or Therapist: No\"; placement history incl. homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/NW_MEDICINE_INTAKE_EXCERPT_2025.pdf", "category": "Medical Records"},
-        "J": {"description": "BGC Group Session Clinical Log — 18 visits March–October 2025 (post-IATP treatment compliance)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/BGC_17_GROUP_SESSIONS_CLINICAL_LOG.pdf", "category": "Medical Records"},
+        "H": {"description": "Ben Gordon Center March 11, 2025 IATP (Court-Ordered Individual Therapy Mandate)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_IATP_2025.pdf", "category": "Therapy Documents", "confidential": True},
+        "I": {"description": "NW Medicine Psychiatry Intake Note (March 11, 2025) — \"Counselor or Therapist: No\"; placement history incl. homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/NW_MEDICINE_INTAKE_EXCERPT_2025.pdf", "category": "Medical Records", "confidential": True},
+        "J": {"description": "BGC Group Session Clinical Log — 18 visits March–October 2025 (post-IATP treatment compliance)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/BGC_17_GROUP_SESSIONS_CLINICAL_LOG.pdf", "category": "Medical Records", "confidential": True},
         "K": {"description": "Daybreak Health Records Request Thread (May 7–11, 2026) — statutory demand under 750 ILCS 5/602.11 for tele-therapy records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/DAYBREAK_HEALTH_RECORDS_REQUEST_THREAD_05_2026.pdf", "category": "Medical Records"},
         "L": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "M": {"description": "Ellie Mental Health Records Request (July 24, 2026) — ROI submission for treatment date details", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/ELLIE_MENTAL_HEALTH_ROI_REQUEST_07_2026.pdf", "category": "Medical Records"},
@@ -87,7 +87,7 @@ EXHIBIT_DATA = {
     },
     3: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Shared Decision-Making & Parenting Time)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
-        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records", "confidential": True},
         "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — abandonment of court-ordered therapy, perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
         "D": {"description": "Kane County Case No. 23DT666 Criminal Conviction & Remand Order", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/23DT666_DUI_CONVICTION.pdf", "category": "Legal Documents"},
         "E": {"description": "Annie Barsch, MA, LMFT Reunification Therapy Protocol & GAL Notice", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
@@ -102,9 +102,9 @@ EXHIBIT_DATA = {
     },
     4: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Sections 2, 8, and 21)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
-        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records", "confidential": True},
         "F": {"description": "Proof of Unauthorized Missouri Relocation (June 15, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/RELOCATION/EVIDENCE_MO_RELOCATION.pdf", "category": "Relocation Evidence"},
-        "G": {"description": "Streamwood Behavioral Healthcare System Records (April 10–22, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/STREAMWOOD_HOSPITAL_04_2026.pdf", "category": "Medical Records"},
+        "G": {"description": "Streamwood Behavioral Healthcare System Records (April 10–22, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/STREAMWOOD_HOSPITAL_04_2026.pdf", "category": "Medical Records", "confidential": True},
         "H": {"description": "Timeline of 20-Month Parenting Time Deprivation (December 2024 – Present) — including 8 police reports", "source_path": "LEGAL_FILE/02_EXHIBITS/PARENTING_TIME/20_MONTH_DEPRIVATION_TIMELINE.pdf", "category": "Parenting Time"},
         "I": {"description": "GAL Evan King's July 17, 2026 Email Confirming Concealment Pattern and Refusal to Disclose", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_07_17_2026.pdf", "category": "GAL Documents"},
         "J": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
@@ -112,7 +112,7 @@ EXHIBIT_DATA = {
     },
     5: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Sections 2 & 8 — Shared Decision-Making & Parenting Time)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
-        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records", "confidential": True},
         "F": {"description": "January 22, 2026 Order Appointing GAL Evan King", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/GAL_APPOINTMENT_2026.pdf", "category": "Court Orders"},
         "G": {"description": "May 4, 2026 Written Demand for Local Home Visits", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/DEMAND_LETTER_05_04_2026.pdf", "category": "GAL Documents"},
         "H": {"description": "May 4–6, 2026 Email Thread between Petitioner and GAL Evan King (Written Refusal of Home Visits & Evidence Review)", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_THREAD_05_2026.pdf", "category": "GAL Documents"},
@@ -127,14 +127,14 @@ EXHIBIT_DATA = {
     },
     6: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Kane County Case No. 14F318)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
-        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records", "confidential": True},
         "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — abandonment of court-ordered therapy, perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
         "D": {"description": "Kane County Case No. 23DT666 Criminal Conviction and Mandatory Remand Order (June 10, 2026) — DUI guilty plea, 24-month Conditional Discharge, mandatory incarceration September 15–22, 2026", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/23DT666_DUI_CONVICTION.pdf", "category": "Legal Documents"},
         "E": {"description": "Mind Matters Reunification Therapy Protocol (Annie Barsch, MA, LMFT) — 3-step trauma-informed intake, age eligibility confirmed July 16, 2026", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
         "F": {"description": "Motion for Nunc Pro Tunc Order (filed May 19, 2026) with supporting evidence", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/NUNC_PRO_TUNC_MOTION.pdf", "category": "Court Orders"},
         "G": {"description": "Order Terminating OP (February 7, 2025) — Voluntary withdrawal of 24OP613", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/24OP613_TERMINATION.pdf", "category": "Legal Documents"},
         "H": {"description": "Guardianship Agreement (June 2024) granting Petitioner care of Zadyn Neill", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/GUARDIANSHIP_AGREEMENT_2024.pdf", "category": "Legal Documents"},
-        "I": {"description": "Mercy Medical Record (March 2025) — Respondent's admission of homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/MERCY_MEDICAL_2025.pdf", "category": "Medical Records"},
+        "I": {"description": "Mercy Medical Record (March 2025) — Respondent's admission of homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/MERCY_MEDICAL_2025.pdf", "category": "Medical Records", "confidential": True},
         "J": {"description": "Police Complaints (April 2025 – October 2025) — 8 complaints for Unlawful Visitation Interference", "source_path": "LEGAL_FILE/02_EXHIBITS/POLICE_REPORTS/COMPLAINTS_2025.pdf", "category": "Police Reports"},
         "K": {"description": "Amended OP Petition (April 10, 2026) — Case No. 26OP618", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/26OP618_AMENDED_PETITION.pdf", "category": "Legal Documents"},
         "L": {"description": "Forensic Communication Analysis — Minor child's text message patterns", "source_path": "LEGAL_FILE/01_DRAFTS/8_FORENSIC-ANALYSIS-VIOLETTE-COMMS.pdf", "category": "Forensic Analysis"},
@@ -144,9 +144,9 @@ EXHIBIT_DATA = {
         "P": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "Q": {"description": "Ryan & Ryan Historical Narrative Thread (October 25, 2021) — 2018 ER pneumonia incident, medical neglect pattern", "source_path": "LEGAL_FILE/COMMS/2021_10_25_RYAN_AND_RYAN_REEVALUATION_THREAD.pdf", "category": "Communication"},
         "R": {"description": "17CM2499 (September 2, 2017) — Respondent's battery conviction against minor child", "source_path": "LEGAL_FILE/02_EXHIBITS/POLICE_REPORTS/17CM2499_BATTERY_CONVICTION.pdf", "category": "Police Reports"},
-        "S": {"description": "Streamwood Behavioral Healthcare System Records (April 10–22, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/STREAMWOOD_HOSPITAL_04_2026.pdf", "category": "Medical Records"},
-        "T": {"description": "Ben Gordon Center March 11, 2025 IATP (Court-Ordered Individual Therapy Mandate)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_IATP_2025.pdf", "category": "Therapy Documents"},
-        "U": {"description": "NW Medicine Psychiatry Intake Note (March 11, 2025) — \"Counselor or Therapist: No\"; placement history incl. homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/NW_MEDICINE_INTAKE_EXCERPT_2025.pdf", "category": "Medical Records"},
+        "S": {"description": "Streamwood Behavioral Healthcare System Records (April 10–22, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/STREAMWOOD_HOSPITAL_04_2026.pdf", "category": "Medical Records", "confidential": True},
+        "T": {"description": "Ben Gordon Center March 11, 2025 IATP (Court-Ordered Individual Therapy Mandate)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_IATP_2025.pdf", "category": "Therapy Documents", "confidential": True},
+        "U": {"description": "NW Medicine Psychiatry Intake Note (March 11, 2025) — \"Counselor or Therapist: No\"; placement history incl. homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/NW_MEDICINE_INTAKE_EXCERPT_2025.pdf", "category": "Medical Records", "confidential": True},
         "V": {"description": "TalkingParents Subscription Inactivity Proof — platform screenshots demonstrating Respondent's deliberate abandonment of court-ordered communication channels", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_SUBSCRIPTION_PROOF.pdf", "category": "Communication"},
     },
 }
@@ -179,6 +179,7 @@ def generate_cover_sheet_md(letter: str, motion_num: int, exhibit_info: dict, pd
     source_path = exhibit_info["source_path"]
     category = exhibit_info["category"]
     source_filename = Path(source_path).name
+    is_confidential = exhibit_info.get("confidential", False)
 
     # Build the sub-index of constituent files
     sub_index_lines = []
@@ -200,6 +201,11 @@ def generate_cover_sheet_md(letter: str, motion_num: int, exhibit_info: dict, pd
     # Escape double quotes in description for markdown
     description_escaped = description.replace('"', '\\"')
 
+    # Confidential stamp — absolutely positioned in right margin
+    confidential_div = ""
+    if is_confidential:
+        confidential_div = '\n<div style="position: absolute; top: 2.2in; right: 0.5in; border: 3px solid #cc0000; color: #cc0000; font-weight: bold; font-size: 14pt; padding: 4px 10px; transform: rotate(-4deg); letter-spacing: 2px;">CONFIDENTIAL</div>\n'
+
     md = f"""**IN THE CIRCUIT COURT OF THE TWENTY-THIRD JUDICIAL CIRCUIT DEKALB COUNTY, ILLINOIS**
 
 **DAVID C. BYERS**, Petitioner,
@@ -209,7 +215,7 @@ vs.
 **PAULETTA D. DONATELLO**, Respondent.
 
 **Case No. 25FA152 — Honorable Sarah Gallagher-Chami, Room 330**
-
+{confidential_div}
 ---
 
 <div style="font-size: 22pt; font-weight: bold; margin-top: 24pt; margin-bottom: 12pt;">EXHIBIT {letter}</div>

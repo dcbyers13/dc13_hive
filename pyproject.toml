@@ -28,6 +28,9 @@ dependencies = [
     "lancedb>=0.25,<0.26",
     "sentence-transformers>=2.7,<3",
     "torch",
+    "pillow>=12.2.0",
+    "pypdf2>=3.0.1",
+    "reportlab>=5.0.0",
 ]
 
 [tool.setuptools.packages.find]

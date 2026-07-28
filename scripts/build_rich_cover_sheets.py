@@ -64,17 +64,18 @@ EXHIBIT_DATA = {
         "A": {"description": "August 3, 2022 Allocation Judgment — Sections 2 & 8 (Shared Decision-Making & Equal Records Access)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
         "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — C-SSRS Discharge Screener, Psychosocial Assessment, Discharge Care Plan, Daily Notes", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
         "D": {"description": "Kane County Case No. 23DT666 Criminal Conviction and Mandatory Remand Order (Sept 15–22, 2026 incarceration)", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/23DT666_DUI_CONVICTION.pdf", "category": "Legal Documents"},
-        "E": {"description": "Annie Barsch, MA, LMFT Reunification Therapy Protocol and Eligibility Confirmation (Mind Matters, Elburn, IL)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
+        "E": {"description": "Annie Barsch, MA, LMFT Reunification Therapy Protocol and Eligibility Confirmation (Mind Matters, Elburn, IL)", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
         "F": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — documentation of ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "G": {"description": "Paternal Residential Stability Documentation (5-year lease/utility proof, Northwestern Medicine hospital records)", "source_path": "LEGAL_FILE/02_EXHIBITS/RESIDENTIAL_STABILITY/5_YEAR_LEASE_PROOF.pdf", "category": "Residential Stability"},
         "H": {"description": "Minor Child's Psychiatric History Timeline (4 hospitalizations in under 3 years: Mercy 11/2023, Streamwood 04/2026, SSM 06/2026, CenterPointe 07/2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/PSYCHIATRIC_HISTORY_TIMELINE.pdf", "category": "Medical Records"},
-        "I": {"description": "GAL Evan King July 17, 2026 Email Refusing to Disclose Child's Hospitalization and Residential Location", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_07_17_2026.pdf", "category": "GAL Documents"},
+        "I": {"description": "GAL Evan King July 17, 2026 Email Refusing to Disclose Child's Hospitalization and Residential Location", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_2026_07_17_VIOLETTE_TREATMENT_HOUSING_CONCERNS.pdf", "category": "GAL Documents"},
+        "J": {"description": "Chronological Multi-Photo Grid Record of Long-Term Paternal Bond, Shared Household Life, and Active Caregiving (2013–2024, 154 photographs)", "source_path": "LEGAL_FILE/02_EXHIBITS/RELATIONAL_BOND/EXHIBIT_J.pdf", "category": "Relational Bond / Photographic Evidence"},
     },
     2: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Sections 2 & 8 — Records Access & Shared Decision-Making)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
         "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal medical gatekeeping, medication obstruction, and \"constant\" suicidal ideation", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
         "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — therapy abandoned, file closed, Respondent unreachable; perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
-        "E": {"description": "Annie Barsch, MA, LMFT Intake Protocol (Trauma-Informed Reunification Therapy)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_INTAKE.pdf", "category": "Therapy Documents"},
+        "E": {"description": "Annie Barsch, MA, LMFT Intake Protocol (Trauma-Informed Reunification Therapy)", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/MIND_MATTERS_INTAKE.pdf", "category": "Therapy Documents"},
         "F": {"description": "740 ILCS 110/4(a)(3) & 4(b) (Mental Health Records Disclosure Authority)", "source_path": "LEGAL_FILE/02_EXHIBITS/STATUTES/740_ILCS_110.pdf", "category": "Statutes"},
         "G": {"description": "Timeline of Clinical Gatekeeping (Daybreak, Streamwood, CenterPointe, Ellie, BGC)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CLINICAL_GATEKEEPING_TIMELINE.pdf", "category": "Medical Records"},
         "H": {"description": "Ben Gordon Center March 11, 2025 IATP (Court-Ordered Individual Therapy Mandate)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_IATP_2025.pdf", "category": "Therapy Documents"},
@@ -84,13 +85,14 @@ EXHIBIT_DATA = {
         "L": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "M": {"description": "Ellie Mental Health Records Request (July 24, 2026) — ROI submission for treatment date details", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/ELLIE_MENTAL_HEALTH_ROI_REQUEST_07_2026.pdf", "category": "Medical Records"},
         "N": {"description": "TalkingParents Subscription Inactivity Proof — platform screenshots documenting Respondent's deliberate abandonment of court-ordered communication channels", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_SUBSCRIPTION_PROOF.pdf", "category": "Communication"},
+        "O": {"description": "GAL Evan King July 17, 2026 Email Refusing to Disclose Child's Hospitalization and Location", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_2026_07_17_VIOLETTE_TREATMENT_HOUSING_CONCERNS.pdf", "category": "GAL Documents"},
     },
     3: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Shared Decision-Making & Parenting Time)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
         "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
-        "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — abandonment of court-ordered therapy, perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
+        "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — abandonment of doctor-ordered therapy, perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
         "D": {"description": "Kane County Case No. 23DT666 Criminal Conviction & Remand Order", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/23DT666_DUI_CONVICTION.pdf", "category": "Legal Documents"},
-        "E": {"description": "Annie Barsch, MA, LMFT Reunification Therapy Protocol & GAL Notice", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
+        "E": {"description": "Annie Barsch, MA, LMFT Reunification Therapy Protocol & GAL Notice", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
         "F": {"description": "24OP613 Order of Protection Filing & Voluntary Withdrawal (Fabricated Claims)", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/24OP613_WITHDRAWAL.pdf", "category": "Legal Documents"},
         "G": {"description": "Timeline of 20-Month Alienation Campaign (Dec 2024 – Jul 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/ALIENATION/20_MONTH_ALIENATION_TIMELINE.pdf", "category": "Alienation"},
         "H": {"description": "Clinical Records Timeline (4 Hospitalizations, 32-Month Care Vacuum)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CLINICAL_GATEKEEPING_TIMELINE.pdf", "category": "Medical Records"},
@@ -99,6 +101,9 @@ EXHIBIT_DATA = {
         "K": {"description": "Ryan & Ryan Historical Narrative Thread (October 25, 2021) — 2018 ER pneumonia incident, medical neglect pattern", "source_path": "LEGAL_FILE/COMMS/2021_10_25_RYAN_AND_RYAN_REEVALUATION_THREAD.pdf", "category": "Communication"},
         "L": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "M": {"description": "John Schroeder Weapons Arrest Record (21CF1065)", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/21CF1065_WEAPONS_RECORD.pdf", "category": "Legal Documents"},
+        "N": {"description": "Certified TalkingParents Excerpt (Mar 2026, pp. 12–16) & Petitioner's Multi-Provider Reunification Search Log (Jan 11, 2026, pp. 6–8) — Extrajudicial lockout admissions and therapeutic gatekeeping", "source_path": "PRINT/02_EXHIBITS/MOTION_3/N/EXHIBIT_N.pdf", "category": "Communication"},
+        "O": {"description": "GAL Evan King July 17–27, 2026 Complete Email Thread Refusing to Disclose Child's Hospitalization and Location", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/2026_07_27_VIOLETTE_GMAIL.pdf", "category": "GAL Documents"},
+        "P": {"description": "Chronological Photographic Ledger of Paternal Caregiving and Shared Co-Residence (2013–2024) — Objective visual documentation directly refuting Respondent's litigation-driven narrative of paternal disconnection", "source_path": "LEGAL_FILE/02_EXHIBITS/RELATIONAL_BOND/EXHIBIT_J.pdf", "category": "Relational Bond / Photographic Evidence"},
     },
     4: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Sections 2, 8, and 21)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
@@ -106,31 +111,33 @@ EXHIBIT_DATA = {
         "F": {"description": "Proof of Unauthorized Missouri Relocation (June 15, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/RELOCATION/EVIDENCE_MO_RELOCATION.pdf", "category": "Relocation Evidence"},
         "G": {"description": "Streamwood Behavioral Healthcare System Records (April 10–22, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/STREAMWOOD_HOSPITAL_04_2026.pdf", "category": "Medical Records"},
         "H": {"description": "Timeline of 20-Month Parenting Time Deprivation (December 2024 – Present) — including 8 police reports", "source_path": "LEGAL_FILE/02_EXHIBITS/PARENTING_TIME/20_MONTH_DEPRIVATION_TIMELINE.pdf", "category": "Parenting Time"},
-        "I": {"description": "GAL Evan King's July 17, 2026 Email Confirming Concealment Pattern and Refusal to Disclose", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_07_17_2026.pdf", "category": "GAL Documents"},
+        "I": {"description": "GAL Evan King's July 17, 2026 Email Confirming Concealment Pattern and Refusal to Disclose", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_2026_07_17_VIOLETTE_TREATMENT_HOUSING_CONCERNS.pdf", "category": "GAL Documents"},
         "J": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "K": {"description": "TalkingParents Subscription Inactivity Proof — platform screenshots documenting Respondent's deliberate abandonment of court-ordered communication channels", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_SUBSCRIPTION_PROOF.pdf", "category": "Communication"},
+        "N": {"description": "Certified TalkingParents Excerpt (Mar 2026, pp. 12–16) & Petitioner's Multi-Provider Reunification Search Log (Jan 11, 2026, pp. 6–8) — Extrajudicial lockout admissions and therapeutic gatekeeping", "source_path": "PRINT/02_EXHIBITS/MOTION_4/N/EXHIBIT_N.pdf", "category": "Communication"},
     },
     5: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Sections 2 & 8 — Shared Decision-Making & Parenting Time)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
         "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
         "F": {"description": "January 22, 2026 Order Appointing GAL Evan King", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/GAL_APPOINTMENT_2026.pdf", "category": "Court Orders"},
         "G": {"description": "May 4, 2026 Written Demand for Local Home Visits", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/DEMAND_LETTER_05_04_2026.pdf", "category": "GAL Documents"},
-        "H": {"description": "May 4–6, 2026 Email Thread between Petitioner and GAL Evan King (Written Refusal of Home Visits & Evidence Review)", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_THREAD_05_2026.pdf", "category": "GAL Documents"},
-        "I": {"description": "June 7, 2026 Email to GAL re: Annie Barsch Reunification Protocol", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_06_07_2026.pdf", "category": "GAL Documents"},
-        "J": {"description": "June 29, 2026 Follow-up Correspondence to GAL", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_06_29_2026.pdf", "category": "GAL Documents"},
-        "K": {"description": "July 17, 2026 GAL Email Confirming CenterPointe Hospitalization and Refusing to Disclose", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_07_17_2026.pdf", "category": "GAL Documents"},
+        "H": {"description": "July 2, 2026 Email from Petitioner to GAL Evan King Demanding Investigation of Minor Child's Post-Relocation Housing, Cohabitants, and School Enrollment Status", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/GAL_EMAIL_HOUSING_SITUATION_JUL_2_2026.pdf", "category": "GAL Documents"},
+        "I": {"description": "June 7, 2026 Email from Petitioner to Annie Barsch, MA, LMFT Re: Waitlist and Reunification Therapy Intake Protocol, CC'd to GAL Evan King", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/RE_WAITLIST_JUN_7_2026.pdf", "category": "GAL Documents"},
+        "J": {"description": "June 29, 2026 Follow-up from Petitioner to Annie Barsch CC'd to GAL Evan King re: Reunification Therapy Scheduling", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/RE_WAITLIST_JUN_29_2026.pdf", "category": "GAL Documents"},
+        "K": {"description": "July 17, 2026 GAL Email Confirming CenterPointe Hospitalization and Refusing to Disclose", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/EMAIL_2026_07_17_VIOLETTE_TREATMENT_HOUSING_CONCERNS.pdf", "category": "GAL Documents"},
         "L": {"description": "Timeline of GAL Inaction (January 22, 2026 – Present)", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/GAL_INACTION_TIMELINE.pdf", "category": "GAL Documents"},
         "M": {"description": "750 ILCS 5/506 (Guardian ad Litem Duties and Reporting)", "source_path": "LEGAL_FILE/02_EXHIBITS/STATUTES/750_ILCS_506.pdf", "category": "Statutes"},
         "N": {"description": "GAL Reunification Counseling Thread (March 3, 2026) — court-ordered reunification counseling per Jan 22 Order; maternal non-responsiveness", "source_path": "LEGAL_FILE/COMMS/2026_03_03_GAL_REUNIFICATION_COUNSELING_THREAD.pdf", "category": "Communication"},
         "O": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
-        "P": {"description": "June 16, 2026 Transmittal Email to GAL Evan King & COMBINED_BINDER.pdf (10-Document Forensic Case Synthesis) — REFERENCE COPY ONLY, not a filed exhibit", "source_path": "LEGAL_FILE/02_EXHIBITS/COMBINED_BINDER.pdf", "category": "Reference Copy"},
+        "P": {"description": "June 16, 2026 Transmittal Email to GAL Evan King — proactive disclosure of comprehensive case file", "source_path": "LEGAL_FILE/02_EXHIBITS/COMBINED_BINDER.pdf", "category": "GAL Documents"},
+        "Q": {"description": "Chronological Photographic Ledger of Paternal Caregiving and Shared Co-Residence (2013–2024) — provided to GAL Evan King as material evidence to evaluate the historical attachment bond under 750 ILCS 5/506", "source_path": "LEGAL_FILE/02_EXHIBITS/RELATIONAL_BOND/EXHIBIT_J.pdf", "category": "Relational Bond / Photographic Evidence"},
     },
     6: {
         "A": {"description": "August 3, 2022 Allocation Judgment (Kane County Case No. 14F318)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
         "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — Facesheet, Psychosocial Assessment, Discharge Care Plan, daily Psychiatry Progress Notes, Interdisciplinary Treatment Plan Updates, and Risk Assessments documenting maternal incapacity admission, medication obstruction, \"constant\" suicidal ideation with overdose plan, and Farmington MO living environment", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
-        "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — abandonment of court-ordered therapy, perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
+        "C": {"description": "Ben Gordon Center File Closure Letter (October 27, 2025) — abandonment of doctor-ordered therapy, perjury impeachment", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_FILE_CLOSURE_LETTER_10_2025.pdf", "category": "Therapy Documents"},
         "D": {"description": "Kane County Case No. 23DT666 Criminal Conviction and Mandatory Remand Order (June 10, 2026) — DUI guilty plea, 24-month Conditional Discharge, mandatory incarceration September 15–22, 2026", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/23DT666_DUI_CONVICTION.pdf", "category": "Legal Documents"},
-        "E": {"description": "Mind Matters Reunification Therapy Protocol (Annie Barsch, MA, LMFT) — 3-step trauma-informed intake, age eligibility confirmed July 16, 2026", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
+        "E": {"description": "Mind Matters Reunification Therapy Protocol (Annie Barsch, MA, LMFT) — 3-step trauma-informed intake, age eligibility confirmed July 16, 2026", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/MIND_MATTERS_PROTOCOL.pdf", "category": "Therapy Documents"},
         "F": {"description": "Motion for Nunc Pro Tunc Order (filed May 19, 2026) with supporting evidence", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/NUNC_PRO_TUNC_MOTION.pdf", "category": "Court Orders"},
         "G": {"description": "Order Terminating OP (February 7, 2025) — Voluntary withdrawal of 24OP613", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/24OP613_TERMINATION.pdf", "category": "Legal Documents"},
         "H": {"description": "Guardianship Agreement (June 2024) granting Petitioner care of Zadyn Neill", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/GUARDIANSHIP_AGREEMENT_2024.pdf", "category": "Legal Documents"},
@@ -139,15 +146,17 @@ EXHIBIT_DATA = {
         "K": {"description": "Amended OP Petition (April 10, 2026) — Case No. 26OP618", "source_path": "LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/26OP618_AMENDED_PETITION.pdf", "category": "Legal Documents"},
         "L": {"description": "Forensic Communication Analysis — Minor child's text message patterns", "source_path": "LEGAL_FILE/01_DRAFTS/8_FORENSIC-ANALYSIS-VIOLETTE-COMMS.pdf", "category": "Forensic Analysis"},
         "M": {"description": "BCBS Claims Summary — Zero individual therapy sessions over 2.5 years", "source_path": "LEGAL_FILE/02_EXHIBITS/INSURANCE/BCBS_CLAIMS_SUMMARY.pdf", "category": "Insurance"},
-        "N": {"description": "TalkingParents Record — Respondent's representations regarding therapy", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_RECORD.pdf", "category": "Communication"},
+        "N": {"description": "Certified TalkingParents Excerpt (Mar 2026, pp. 12–16) & Petitioner's Multi-Provider Reunification Therapists Survey (Jan 11, 2026, pp. 6–8) — Extrajudicial lockout admissions, therapeutic gatekeeping, and GAL notice of Respondent's self-admitted lockout", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_RECORD.pdf", "category": "Communication"},
         "O": {"description": "Violette Apology Letter (April 8, 2025) — handwritten letter evidencing parental bond, non-abandonment, emotional devotion", "source_path": "LEGAL_FILE/02_EXHIBITS/PARENTING_TIME/VIOLETTE_APOLOGY_LETTER.pdf", "category": "Parenting Time"},
         "P": {"description": "CenterPointe Hospital ROI Email Thread (July 20–23, 2026) — ROI execution for MO inpatient records", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf", "category": "Medical Records"},
         "Q": {"description": "Ryan & Ryan Historical Narrative Thread (October 25, 2021) — 2018 ER pneumonia incident, medical neglect pattern", "source_path": "LEGAL_FILE/COMMS/2021_10_25_RYAN_AND_RYAN_REEVALUATION_THREAD.pdf", "category": "Communication"},
         "R": {"description": "17CM2499 (September 2, 2017) — Respondent's battery conviction against minor child", "source_path": "LEGAL_FILE/02_EXHIBITS/POLICE_REPORTS/17CM2499_BATTERY_CONVICTION.pdf", "category": "Police Reports"},
         "S": {"description": "Streamwood Behavioral Healthcare System Records (April 10–22, 2026)", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/STREAMWOOD_HOSPITAL_04_2026.pdf", "category": "Medical Records"},
         "T": {"description": "Ben Gordon Center March 11, 2025 IATP (Court-Ordered Individual Therapy Mandate)", "source_path": "LEGAL_FILE/02_EXHIBITS/THERAPY_DOCS/BGC_IATP_2025.pdf", "category": "Therapy Documents"},
-        "U": {"description": "NW Medicine Psychiatry Intake Note (March 11, 2025) — \"Counselor or Therapist: No\"; placement history incl. homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/NW_MEDICINE_INTAKE_EXCERPT_2025.pdf", "category": "Medical Records"},
-        "V": {"description": "TalkingParents Subscription Inactivity Proof — platform screenshots demonstrating Respondent's deliberate abandonment of court-ordered communication channels", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_SUBSCRIPTION_PROOF.pdf", "category": "Communication"},
+        "U": {"description": "GAL Evan King July 17–27, 2026 Complete Email Thread Refusing to Disclose Child's Hospitalization, Location, and Post-Discharge Placement", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/2026_07_27_VIOLETTE_GMAIL.pdf", "category": "GAL Documents"},
+        "V": {"description": "NW Medicine Psychiatry Intake Note (March 11, 2025) — \"Counselor or Therapist: No\"; placement history incl. homelessness", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/NW_MEDICINE_INTAKE_EXCERPT_2025.pdf", "category": "Medical Records"},
+        "W": {"description": "TalkingParents Subscription Inactivity Proof — platform screenshots demonstrating Respondent's deliberate abandonment of court-ordered communication channels", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_SUBSCRIPTION_PROOF.pdf", "category": "Communication"},
+        "X": {"description": "Chronological Photographic Ledger of Paternal Caregiving and Shared Co-Residence (2013–2024) — Objective visual documentation establishing an 11-year history of continuous parental involvement, shared household life, and primary caregiving prior to the December 2024 extrajudicial lockout, including the November 6, 2023 Mercy Medical discharge pickup (IMG_5241), directly supporting the statutory best-interests analysis under 750 ILCS 5/602.7(b)(1)", "source_path": "LEGAL_FILE/02_EXHIBITS/RELATIONAL_BOND/EXHIBIT_J.pdf", "category": "Relational Bond / Photographic Evidence"},
     },
 }
 
@@ -156,22 +165,73 @@ EXHIBIT_DATA = {
 
 CONFIDENTIAL_EXHIBITS = {
     1: {"B", "H", "I"},
-    2: {"B", "G", "H", "I", "J"},
-    3: {"B", "H"},
-    4: {"B", "G", "I"},
-    5: {"B", "G", "J", "K"},
-    6: {"B", "I", "L", "S", "T", "U"},
+    2: {"B", "C", "G", "H", "I", "J", "O"},
+    3: {"B", "C", "H", "N", "O"},
+    4: {"B", "G", "I", "N"},
+    5: {"B", "G", "K"},
+    6: {"B", "C", "F", "I", "L", "M", "N", "S", "T", "U"},
 }
 
 def is_confidential(motion_num, exhibit_letter):
     return exhibit_letter.upper() in CONFIDENTIAL_EXHIBITS.get(int(motion_num), set())
 
 
-def scan_exhibit_pdfs(exhibit_dir: Path) -> list[str]:
+def scan_exhibit_pdfs(exhibit_dir: Path, motion_num: int = 0) -> list[str]:
     """Scan directory for underlying PDFs, excluding cover sheets and merged outputs."""
     pdfs = []
     if not exhibit_dir.exists():
         return pdfs
+    
+    # Manual order for Exhibit E (Mind Matters)
+    if exhibit_dir.name == "E":
+        manual_order = [
+            "THERAPIST_EMAIL_WAITLIST_JUN_5-7_2026.pdf",
+            "THERAPIST_EMAIL_WAITLIST_FOLLOWUP_JUN_7-JUL_1_2026.pdf",
+            "MIND_MATTERS_PROTOCOL.pdf"
+        ]
+        for fname in manual_order:
+            f = exhibit_dir / fname
+            if f.exists():
+                pdfs.append(f.name)
+        # Add any other files that aren't in our manual order
+        for f in sorted(exhibit_dir.iterdir()):
+            if f.suffix.lower() == ".pdf" and not f.name.startswith(("EXHIBIT_", "COVER_")) and f.name not in pdfs:
+                pdfs.append(f.name)
+        return pdfs
+    
+    # Manual order for Exhibit N (TalkingParents Excerpt + Reunification Search Log)
+    if exhibit_dir.name == "N" and motion_num in (3, 4, 5):
+        manual_order = [
+            "TALKINGPARENTS_EXCERPT_PP12-16.pdf",
+            "REUNIFICATION_THERAPISTS_SUMMARY.pdf"
+        ]
+        for fname in manual_order:
+            f = exhibit_dir / fname
+            if f.exists():
+                pdfs.append(f.name)
+        # Add any other files that aren't in our manual order
+        for f in sorted(exhibit_dir.iterdir()):
+            if f.suffix.lower() == ".pdf" and not f.name.startswith(("EXHIBIT_", "COVER_")) and f.name not in pdfs:
+                pdfs.append(f.name)
+        return pdfs
+    
+    # Manual order for Exhibit N (Motion 6 — TalkingParents Thread + Reunification Therapists Survey)
+    if exhibit_dir.name == "N" and motion_num == 6:
+        manual_order = [
+            "TALKINGPARENTS_REUNIFICATION_THERAPY_THREAD.pdf",
+            "REUNIFICATION_THERAPISTS_SURVEY.pdf"
+        ]
+        for fname in manual_order:
+            f = exhibit_dir / fname
+            if f.exists():
+                pdfs.append(f.name)
+        # Add any other files that aren't in our manual order
+        for f in sorted(exhibit_dir.iterdir()):
+            if f.suffix.lower() == ".pdf" and not f.name.startswith(("EXHIBIT_", "COVER_")) and f.name not in pdfs:
+                pdfs.append(f.name)
+        return pdfs
+    
+    # Default alphabetical order for other exhibits
     for f in sorted(exhibit_dir.iterdir()):
         if f.suffix.lower() == ".pdf" and not f.name.startswith(("EXHIBIT_", "COVER_")):
             pdfs.append(f.name)
@@ -203,9 +263,9 @@ def generate_cover_sheet_md(letter: str, motion_num: int, exhibit_info: dict, pd
     else:
         for i, fname in enumerate(pdf_filenames, 1):
             # Extract complaint number from filename if it's a police report
-            sub_index_lines.append(f"1. `{fname}`")
+            sub_index_lines.append(f"{i}. `{fname}`")
 
-    sub_index = "\n".join(sub_index_lines)
+    sub_index = "\n\n".join(sub_index_lines)
 
     # Build source file listing
     if len(pdf_filenames) == 1:
@@ -245,6 +305,7 @@ vs.
 {description}
 {PAGE_INDEX_B if letter == "B" else ""}
 **Constituent File Sub-Index:**
+
 {sub_index}
 
 ---
@@ -311,7 +372,7 @@ def process_exhibit(motion_num: int, letter: str, dry_run: bool = False) -> dict
         return {"status": "skipped", "reason": "no metadata"}
 
     # Scan for underlying PDFs
-    pdf_filenames = scan_exhibit_pdfs(exhibit_dir)
+    pdf_filenames = scan_exhibit_pdfs(exhibit_dir, motion_num)
     if not pdf_filenames:
         return {"status": "skipped", "reason": "no PDFs found"}
 

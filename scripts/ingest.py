@@ -72,8 +72,16 @@ RAG_DIR = Path("/Users/macuser/LAW_LAB/25FA152_rag")
 TARGETS = {
     "01_DRAFTS": LEGAL_DIR / "01_DRAFTS",
     "02_ACTIVE_ORDERS": LEGAL_DIR / "02_ACTIVE_ORDERS",
+    "02_EXHIBITS/MEDICAL_RECORDS": LEGAL_DIR / "02_EXHIBITS" / "MEDICAL_RECORDS",
+    "02_EXHIBITS/THERAPY_DOCS": LEGAL_DIR / "02_EXHIBITS" / "THERAPY_DOCS",
+    "02_EXHIBITS/LEGAL_DOCUMENTS": LEGAL_DIR / "02_EXHIBITS" / "LEGAL_DOCUMENTS",
+    "02_EXHIBITS/HOUSING_HISTORY": LEGAL_DIR / "02_EXHIBITS" / "HOUSING_HISTORY",
+    "02_EXHIBITS/COMMUNICATION": LEGAL_DIR / "02_EXHIBITS" / "COMMUNICATION",
+    "02_EXHIBITS/COURT_ORDERS": LEGAL_DIR / "02_EXHIBITS" / "COURT_ORDERS",
+    "02_EXHIBITS/RELATIONAL_BOND": LEGAL_DIR / "02_EXHIBITS" / "RELATIONAL_BOND",
     "03_BYERS_FILINGS": LEGAL_DIR / "03_BYERS_FILINGS",
     "04_DONATELLO_FILINGS": LEGAL_DIR / "04_DONATELLO_FILINGS",
+    "05_RELATED_CASES": LEGAL_DIR / "05_RELATED_CASES",
     "99_MISC": LEGAL_DIR / "99_MISC",
 }
 
@@ -85,6 +93,13 @@ EXTRACT_DATES_SCRIPT = Path(__file__).resolve().parent / "extract_all_dates.py"
 REPROCESS_DIRS = (
     "01_DRAFTS",
     "02_ACTIVE_ORDERS",
+    "02_EXHIBITS/MEDICAL_RECORDS",
+    "02_EXHIBITS/THERAPY_DOCS",
+    "02_EXHIBITS/LEGAL_DOCUMENTS",
+    "02_EXHIBITS/HOUSING_HISTORY",
+    "02_EXHIBITS/COMMUNICATION",
+    "02_EXHIBITS/COURT_ORDERS",
+    "02_EXHIBITS/RELATIONAL_BOND",
     "03_BYERS_FILINGS",
     "04_DONATELLO_FILINGS",
     "05_RELATED_CASES",
@@ -756,6 +771,46 @@ def auto_classify(text: str, filename: str) -> str:
         return "02_ACTIVE_ORDERS"
     if "draft" in fname:
         return "01_DRAFTS"
+
+    # Medical records and therapy documents
+    if any(term in head for term in ["medical record", "health record", "northwestern medicine", "nw medicine", "vmd medical", "psychiatry", "therapy", "counseling"]):
+        return "02_EXHIBITS/MEDICAL_RECORDS"
+    if any(term in fname for term in ["medical", "nw", "psych", "therapy", "counseling", "vmd"]):
+        return "02_EXHIBITS/MEDICAL_RECORDS"
+
+    # Therapy and clinical documents
+    if "therapy" in head or "clinical" in head or "counseling" in head:
+        return "02_EXHIBITS/THERAPY_DOCS"
+    if "therapy" in fname or "clinical" in fname or "counseling" in fname:
+        return "02_EXHIBITS/THERAPY_DOCS"
+
+    # Housing and residential documents
+    if any(term in head for term in ["lease", "housing", "voucher", "rfta", "inspection", "residential"]):
+        return "02_EXHIBITS/HOUSING_HISTORY"
+    if any(term in fname for term in ["lease", "housing", "voucher", "rfta", "inspection"]):
+        return "02_EXHIBITS/HOUSING_HISTORY"
+
+    # Legal documents and court filings
+    if any(term in head for term in ["legal document", "court document", "filing", "dui", "criminal", "conviction"]):
+        return "02_EXHIBITS/LEGAL_DOCUMENTS"
+    if any(term in fname for term in ["legal", "court", "dui", "conviction", "criminal"]):
+        return "02_EXHIBITS/LEGAL_DOCUMENTS"
+
+    # Communication records
+    if any(term in head for term in ["email", "communication", "talkingparents", "sms", "message"]):
+        return "02_EXHIBITS/COMMUNICATION"
+    if any(term in fname for term in ["email", "talkingparents", "sms", "communication"]):
+        return "02_EXHIBITS/COMMUNICATION"
+
+    # Relational bond, photos, and attachment evidence
+    if any(term in head for term in ["photo", "photograph", "picture", "attachment", "bond", "relationship", "father-daughter", "parent-child"]):
+        return "02_EXHIBITS/RELATIONAL_BOND"
+    if any(term in fname for term in ["photo", "photolog", "attachment", "bond", "img_", "picture"]):
+        return "02_EXHIBITS/RELATIONAL_BOND"
+
+    # Court orders and judgments
+    if "order" in head or "judgment" in head:
+        return "02_ACTIVE_ORDERS"
 
     return "99_MISC"
 

@@ -45,6 +45,7 @@ MOTION_TITLES = {
     4: "Supplemental Petition for Rule to Show Cause",
     5: "Motion to Compel GAL Report",
     6: "Petition to Modify Allocation of Parental Responsibilities",
+    7: "Supplemental Evidentiary Memorandum in Support of Emergency Motions #1–6",
 }
 
 MOTION_FILENAMES = {
@@ -54,6 +55,7 @@ MOTION_FILENAMES = {
     4: "SUPPLEMENTAL_PETITION_RULE_TO_SHOW_CAUSE",
     5: "MOTION_TO_COMPEL_GAL_REPORT",
     6: "PETITION_TO_MODIFY",
+    7: "SUPPLEMENTAL_EVIDENTIARY_MEMORANDUM_IN_SUPPORT_OF_MOTIONS_1_THROUGH_6",
 }
 
 # ─── EXHIBIT METADATA (from AUGUST_4_EXHIBIT_MASTER_INDEX.md) ─────────────────
@@ -158,6 +160,14 @@ EXHIBIT_DATA = {
         "W": {"description": "TalkingParents Subscription Inactivity Proof — platform screenshots demonstrating Respondent's deliberate abandonment of court-ordered communication channels", "source_path": "LEGAL_FILE/02_EXHIBITS/COMMUNICATION/TALKINGPARENTS_SUBSCRIPTION_PROOF.pdf", "category": "Communication"},
         "X": {"description": "Chronological Photographic Ledger of Paternal Caregiving and Shared Co-Residence (2013–2024) — Objective visual documentation establishing an 11-year history of continuous parental involvement, shared household life, and primary caregiving prior to the December 2024 extrajudicial lockout, including the November 6, 2023 Mercy Medical discharge pickup (IMG_5241), directly supporting the statutory best-interests analysis under 750 ILCS 5/602.7(b)(1)", "source_path": "LEGAL_FILE/02_EXHIBITS/RELATIONAL_BOND/EXHIBIT_J.pdf", "category": "Relational Bond / Photographic Evidence"},
     },
+    7: {
+        "A": {"description": "August 3, 2022 Allocation Judgment — Section 8 (100% intact parental rights)", "source_path": "LEGAL_FILE/02_EXHIBITS/COURT_ORDERS/ALLOCATION_JUDGMENT_2022.pdf", "category": "Court Orders"},
+        "B": {"description": "CenterPointe Hospital of Columbia, MO Inpatient Psychiatric Records (ROI, July 8–23, 2026, 134 pages) — including Interdisciplinary Treatment Plan Update dated July 13, 2026 (p. 32) setting Anticipated Discharge Date of July 15, 2026; actual discharge July 23, 2026 at 2:00 PM", "source_path": "LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf", "category": "Medical Records"},
+        "W": {"description": "GAL Communication Blackout Email Thread (August 4–5, 2026) — GAL refusal to provide child-welfare status updates; GAL admonition to Petitioner; references to Huntley Middle School enrollment", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/2026_08_04_GAL_COMMUNICATION_BLACKOUT_THREAD.pdf", "category": "GAL Documents"},
+        "X": {"description": "GAL Statutory Duties Request Email (August 5, 2026) — Petitioner's written request under 750 ILCS 5/506 for status of child's psychiatric care, housing, and school enrollment", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/2026_08_05_GAL_STATUTORY_DUTIES_REQUEST.pdf", "category": "GAL Documents"},
+        "Y": {"description": "DeKalb CUSD 428 ParentSquare Broadcast — Huntley Middle School \"7th/8th Grade ID's and Picture Information\" (August 5, 2026) — evidence of active student enrollment in DeKalb CUSD 428 for 2026–2027 school year", "source_path": "LEGAL_FILE/02_EXHIBITS/SCHOOL_RECORDS/2026_08_05_HUNTLEY_MIDDLE_SCHOOL_ID_ANNOUNCEMENT.pdf", "category": "School Records"},
+        "Z": {"description": "Guardian ad Litem Evan King Invoice #4400 (August 4, 2026) — contemporaneous billing entries documenting July 15, 2026 inpatient discharge pickup refusal and July 27–29, 2026 extrajudicial \"possible guardianship\" negotiations", "source_path": "LEGAL_FILE/02_EXHIBITS/GAL_DOCS/2026_08_04_GAL_INVOICE_4400.pdf", "category": "GAL Documents"},
+    },
 }
 
 # ─── CONFIDENTIAL STAMP MAPPING (per-motion) ──────────────────────────────────
@@ -170,6 +180,7 @@ CONFIDENTIAL_EXHIBITS = {
     4: {"B", "G", "I", "N"},
     5: {"B", "G", "K"},
     6: {"B", "C", "F", "I", "L", "M", "N", "S", "T", "U"},
+    7: {"B", "W", "X", "Z"},
 }
 
 def is_confidential(motion_num, exhibit_letter):
@@ -420,11 +431,11 @@ def process_exhibit(motion_num: int, letter: str, dry_run: bool = False) -> dict
 
 def main():
     parser = argparse.ArgumentParser(description="Build rich exhibit cover sheets with metadata")
-    parser.add_argument("--motion", type=int, help="Process only this motion number (1-6)")
+    parser.add_argument("--motion", type=int, help="Process only this motion number (1-7)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")
     args = parser.parse_args()
 
-    motions = [args.motion] if args.motion else [1, 2, 3, 4, 5, 6]
+    motions = [args.motion] if args.motion else [1, 2, 3, 4, 5, 6, 7]
 
     total_generated = 0
     total_compiled = 0

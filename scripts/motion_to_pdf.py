@@ -72,7 +72,7 @@ def transform_pleading_structure(html_content):
 
     return str(soup)
 
-def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
+def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=True):
     try:
         with open(input_file, "r", encoding="utf-8") as f:
             md_text = f.read()
@@ -81,15 +81,19 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72"):
         html_raw = markdown.markdown(md_text, extensions=["tables", "fenced_code"])
         html_tagged = transform_pleading_structure(html_raw)
 
+        page_footer = """
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 9pt;
+            }
+        """ if page_numbers else ""
+
         custom_css = CSS(string=f"""
             @page {{
                 size: letter portrait;
                 margin: {margin}in;
-                @bottom-right {{
-                    content: "Page " counter(page) " of " counter(pages);
-                    font-family: Arial, Helvetica, sans-serif;
-                    font-size: 9pt;
-                }}
+                {page_footer}
             }}
 
             body {{
@@ -236,7 +240,8 @@ if __name__ == "__main__":
     parser.add_argument("input", help="Input markdown file")
     parser.add_argument("output", nargs="?", default=None, help="Output PDF file")
     parser.add_argument("--margin", type=float, default=0.72, help="Page margin in inches (default: 0.72)")
+    parser.add_argument("--no-page-numbers", action="store_true", help="Omit the 'Page X of Y' footer")
 
     args = parser.parse_args()
     output_pdf = args.output or args.input.rsplit(".", 1)[0] + ".pdf"
-    convert_motion_to_pdf(args.input, output_pdf, margin=str(args.margin))
+    convert_motion_to_pdf(args.input, output_pdf, margin=str(args.margin), page_numbers=not args.no_page_numbers)

@@ -4,6 +4,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "beautifulsoup4",
+#     "certifi",
 #     "markdown",
 # ]
 # ///
@@ -31,6 +32,7 @@ Each chapter/act has an FTP directory from which we extract the document
 code and list all available sections.
 """
 
+from datetime import date
 import re
 import sys
 import json
@@ -127,9 +129,12 @@ def doc_url(code: str, section: str) -> str:
 
 
 def fetch_url(url: str, timeout: int = 15) -> str:
+    import certifi
+    import ssl
+    context = ssl.create_default_context(cafile=certifi.where())
     req = Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urlopen(req, timeout=timeout) as resp:
+        with urlopen(req, timeout=timeout, context=context) as resp:
             return resp.read().decode("utf-8", errors="replace")
     except HTTPError as e:
         raise
@@ -360,7 +365,7 @@ def download_statute(chapter: int, act: int, section: str,
     md_content = f"""{title_line}
 
 **Source:** {used_url}
-**Retrieved:** 2026-06-01
+**Retrieved:** {date.today().isoformat()}
 
 ---
 

@@ -14,6 +14,7 @@ Excluded internal trackers (never printed):
   - MASTER_PREP_TRACKER.md
   - MEDICAL_RECORD_AUDIT.md
   - SUBPOENA_DUCES_TECUM_INDEX.md
+  - FILEMAP.md
 
 Usage:
     uv run dc13_hive/scripts/sync_nov10_print.py            # full run, compile all
@@ -35,6 +36,7 @@ INCLUDE_DIRS = [
     "02_DISCOVERY",
     "03_CROSS_EXAMINATION",
     "03_DIRECT_EXAMINATION",
+    "04_EXHIBITS",
     "05_BENCH_STATEMENTS",
 ]
 
@@ -43,6 +45,7 @@ EXCLUDE_FILES = {
     "MASTER_PREP_TRACKER.md",
     "MEDICAL_RECORD_AUDIT.md",
     "SUBPOENA_DUCES_TECUM_INDEX.md",
+    "FILEMAP.md",
 }
 
 MARGIN = "0.72"

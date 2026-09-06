@@ -70,7 +70,65 @@ def transform_pleading_structure(html_content):
         if text_clean in ["DAVID C. BYERS", "**DAVID C. BYERS**"]:
             p.insert(0, BeautifulSoup("<br/><br/><br/>", "html.parser"))
 
+    soup = format_tables_and_breaks(soup)
     return str(soup)
+
+
+def format_tables_and_breaks(soup):
+    """
+    Intelligently inject colgroups and wrap opportunities for table cells
+    without distorting formal court pleading structure.
+    """
+    for table in soup.find_all("table"):
+        # 1. Insert zero-width break opportunities after underscores and slashes
+        for cell in table.find_all(["td", "th"]):
+            for string in list(cell.strings):
+                if "_" in string or "/" in string:
+                    # Add zero-width space after _ or / so WeasyPrint can wrap filenames
+                    new_text = re.sub(r"([_/])", lambda m: m.group(1) + "\u200b", str(string))
+                    string.replace_with(new_text)
+
+        # 2. Determine column widths based on table headers
+        headers = [th.get_text().strip() for th in table.find_all("th")]
+        col_count = len(headers)
+        if col_count == 0:
+            first_row = table.find("tr")
+            if first_row:
+                col_count = len(first_row.find_all(["td", "th"]))
+
+        colgroup = soup.new_tag("colgroup")
+
+        # Universal Exhibits (3 cols: Letter | Document | Used In)
+        if col_count == 3 and headers and "Letter" in headers[0]:
+            widths = ["10%", "58%", "32%"]
+        # Filing-Specific Exhibits (4 cols: # | NOV_10 Filing | Assigned Letters | Pending Exhibits)
+        elif col_count == 4 and headers and "#" in headers[0]:
+            widths = ["6%", "34%", "14%", "46%"]
+        # Master Exhibit Catalog (5 cols: Letter | Exhibit | Source Path | Used In | Status)
+        elif col_count == 5 and headers and ("Letter" in headers[0] or "Exhibit" in headers[1]):
+            widths = ["9%", "29%", "30%", "16%", "16%"]
+        # Cross-Reference Matrix (6+ cols)
+        elif col_count >= 6:
+            first_width = 16
+            rem_width = (100 - first_width) / (col_count - 1)
+            widths = [f"{first_width}%"] + [f"{rem_width:.1f}%"] * (col_count - 1)
+        # Change Log (2 cols: Date | Change)
+        elif col_count == 2 and headers and "Date" in headers[0]:
+            widths = ["20%", "80%"]
+        # Generic Fallback
+        else:
+            if col_count > 0:
+                widths = [f"{100 / col_count:.1f}%"] * col_count
+            else:
+                widths = []
+
+        for w in widths:
+            col = soup.new_tag("col", style=f"width: {w};")
+            colgroup.append(col)
+
+        table.insert(0, colgroup)
+
+    return soup
 
 def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=True):
     try:
@@ -165,6 +223,31 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
                 break-after: avoid;
             }}
 
+            /* General Heading Fallbacks (non-motion markdown docs: indexes, ledgers) */
+            h1:not(.court-header):not(.motion-title) {{
+                font-size: 14pt !important;
+                font-weight: bold !important;
+                margin-top: 10pt !important;
+                margin-bottom: 8pt !important;
+                text-transform: uppercase;
+            }}
+
+            h2:not(.section-heading) {{
+                font-size: 11pt !important;
+                font-weight: bold !important;
+                margin-top: 10pt !important;
+                margin-bottom: 6pt !important;
+                border-bottom: 0.5pt solid #ccc;
+                padding-bottom: 2pt;
+            }}
+
+            h3:not(.subsection-heading) {{
+                font-size: 10pt !important;
+                font-weight: bold !important;
+                margin-top: 8pt !important;
+                margin-bottom: 4pt !important;
+            }}
+
             /* Lists & Body Formatting (12pt Default) */
             ul, ol {{
                 margin-top: 0;
@@ -197,34 +280,72 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
                 break-inside: avoid;
             }}
 
-            /* Table Formatting */
+            /* High-Density Court Table Styling */
             table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 12pt;
-                font-size: 10pt;
+                width: 100% !important;
+                table-layout: fixed !important; /* Enforces colgroup percentage widths */
+                border-collapse: collapse !important;
+                margin-top: 6pt !important;
+                margin-bottom: 10pt !important;
+                font-size: 8.5pt !important;
+                line-height: 1.25 !important;
             }}
 
-            th, td {{
-                border: 1px solid #dddddd;
-                padding: 4pt;
-                text-align: left;
-                vertical-align: top;
-                overflow-wrap: break-word;
-                hyphens: auto;
+            thead {{
+                display: table-header-group !important;
+            }}
+
+            tr {{
+                /* Allow rows to split across page boundaries to prevent 3-inch empty holes */
+                page-break-inside: auto !important;
+                break-inside: auto !important;
             }}
 
             th {{
-                background-color: #f5f5f5;
-                font-weight: bold;
-                padding: 6pt 4pt;
+                background-color: #f2f2f2 !important;
+                font-weight: bold !important;
+                text-align: left;
+                padding: 3.5pt 4.5pt !important;
+                border: 0.5pt solid #777 !important;
+                font-size: 8.5pt !important;
+                vertical-align: bottom !important;
             }}
 
-            th:nth-child(1), td:nth-child(1) {{ width: 8%; }}
-            th:nth-child(2), td:nth-child(2) {{ width: 35%; }}
-            th:nth-child(3), td:nth-child(3) {{ width: 25%; }}
-            th:nth-child(4), td:nth-child(4) {{ width: 27%; }}
-            th:nth-child(5), td:nth-child(5) {{ width: 5%; }}
+            td {{
+                padding: 3pt 4.5pt !important;
+                border: 0.5pt solid #aaa !important;
+                vertical-align: top !important;
+                font-size: 8.5pt !important;
+                overflow-wrap: break-word !important;
+                word-break: normal !important;
+            }}
+
+            /* Ensure narrow index columns center text and do not split letter codes */
+            table colgroup col:first-child + col + col {{
+                /* preserves default flow */
+            }}
+
+            /* First column styling for index tables */
+            th:first-child, td:first-child {{
+                text-align: center;
+                white-space: nowrap; /* Prevents PD-28 from breaking onto two lines */
+            }}
+
+            /* Checkbox and matrix table alignments */
+            td:empty {{
+                background-color: #fafafa;
+            }}
+
+            /* Ensure inline code in tables matches table typography */
+            td code, th code {{
+                font-family: inherit !important;
+                font-size: 8pt !important;
+                background-color: #f8f8f8;
+                padding: 1pt 2pt;
+                border: 0.5pt solid #e0e0e0;
+                overflow-wrap: break-word !important;
+                word-break: break-word !important;
+            }}
         """)
 
         HTML(string=html_tagged).write_pdf(output_file, stylesheets=[custom_css])

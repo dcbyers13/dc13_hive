@@ -10,11 +10,9 @@ Mirrors the 25FA152/NOV_10/ subfolder hierarchy inside 25FA152/PRINT/NOV_10/ and
 compiles every target .md into a same-name .pdf by invoking motion_to_pdf.py
 with the Petitioner's established 0.72" margin style.
 
-Excluded internal trackers (never printed):
-  - MASTER_PREP_TRACKER.md
-  - MEDICAL_RECORD_AUDIT.md
-  - SUBPOENA_DUCES_TECUM_INDEX.md
-  - FILEMAP.md
+Every *.md under NOV_10/ is compiled -- including root-level files (trackers
+and scratch) and audit/index docs -- EXCEPT FILEMAP.md (the only excluded file,
+per user decree; the .md copy already sits in PRINT/NOV_10/ as a reference).
 
 Usage:
     uv run dc13_hive/scripts/sync_nov10_print.py            # full run, compile all
@@ -30,8 +28,10 @@ from pathlib import Path
 SOURCE_ROOT = Path("25FA152/NOV_10")
 TARGET_ROOT = Path("25FA152/PRINT/NOV_10")
 
-# Allowed subdirectories under SOURCE_ROOT (Tracker/exhibit-only dirs excluded)
+# All subdirectories under SOURCE_ROOT plus the root itself (""). Every *.md is
+# compiled to a same-name .pdf; only FILEMAP.md is excluded.
 INCLUDE_DIRS = [
+    "",
     "01_MOTIONS",
     "02_DISCOVERY",
     "03_CROSS_EXAMINATION",
@@ -40,11 +40,10 @@ INCLUDE_DIRS = [
     "05_BENCH_STATEMENTS",
 ]
 
-# Internal trackers / management docs never compiled to PDF
+# The single never-printed file. (MASTER_PREP_TRACKER, MEDICAL_RECORD_AUDIT,
+# SUBPOENA_DUCES_TECUM_INDEX, and root scratch.md are now compiled per user
+# decree of 100% .md coverage.)
 EXCLUDE_FILES = {
-    "MASTER_PREP_TRACKER.md",
-    "MEDICAL_RECORD_AUDIT.md",
-    "SUBPOENA_DUCES_TECUM_INDEX.md",
     "FILEMAP.md",
 }
 
@@ -57,10 +56,14 @@ def discover_targets():
     """Return list of (source_md, target_pdf) tuples for all eligible files."""
     targets = []
     for sub in INCLUDE_DIRS:
-        srcdir = SOURCE_ROOT / sub
+        srcdir = SOURCE_ROOT if sub == "" else SOURCE_ROOT / sub
         if not srcdir.is_dir():
             continue
-        for md in sorted(srcdir.rglob("*.md")):
+        if sub == "":
+            md_iter = sorted(srcdir.glob("*.md"))
+        else:
+            md_iter = sorted(srcdir.rglob("*.md"))
+        for md in md_iter:
             if md.name in EXCLUDE_FILES:
                 continue
             rel = md.relative_to(SOURCE_ROOT)

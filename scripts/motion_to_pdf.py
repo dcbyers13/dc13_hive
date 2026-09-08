@@ -27,6 +27,20 @@ from weasyprint import HTML, CSS
 def transform_pleading_structure(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
 
+    # Strip Change Log sections from court-ready PDF output
+    for heading in list(soup.find_all(["h1", "h2", "h3", "h4", "p"])):
+        text = heading.get_text().strip()
+        if re.search(r'\bchange\s*log\b', text, re.IGNORECASE):
+            prev = heading.find_previous_sibling()
+            if prev and prev.name == "hr":
+                prev.decompose()
+            curr = heading
+            while curr:
+                nxt = curr.find_next_sibling()
+                curr.decompose()
+                curr = nxt
+            break
+
     # State flag to restrict caption/title tagging strictly to the top header area
     in_header_zone = True
 
@@ -44,7 +58,7 @@ def transform_pleading_structure(html_content):
                 p['class'] = p.get('class', []) + ['court-header']
 
             # 2. Case Number Line (13pt Regular, Unbolded)
-            elif re.search(r'Case\s+No\.?\s*[\d\w]+', text, re.IGNORECASE):
+            elif re.match(r'^\s*(?:Case\s+No\.?|No\.?)\s*[\d\w]+', text, re.IGNORECASE) and len(text) < 80:
                 p['class'] = p.get('class', []) + ['case-number']
                 # Strip all inner strong and b tags to force regular weight
                 for tag in p.find_all(["strong", "b"]):
@@ -52,7 +66,7 @@ def transform_pleading_structure(html_content):
 
             # 3. Motion Title (14pt Bold) - Only applied inside header zone
             # Use \b word boundaries so "PETITION" doesn't false-match "PETITIONER" in party names
-            elif any(re.search(r'\b' + kw + r'\b', text_upper) for kw in ["MOTION", "PETITION", "ORDER", "RESPONSE", "REPLY"]) and "CIRCUIT COURT" not in text_upper:
+            elif any(re.search(r'\b' + kw + r'\b', text_upper) for kw in ["MOTION", "PETITION", "ORDER", "RESPONSE", "REPLY", "REQUEST", "NOTICE", "MEMORANDUM"]) and "CIRCUIT COURT" not in text_upper:
                 p['class'] = p.get('class', []) + ['motion-title']
                 in_header_zone = False  # Title found; close header zone
         else:
@@ -64,11 +78,72 @@ def transform_pleading_structure(html_content):
             elif re.match(r'^[A-Z]\.\s+', text) and len(text) < 120:
                 p['class'] = p.get('class', []) + ['subsection-heading']
 
-    # Insert signature line spacing ONLY on standalone signature lines
-    for p in soup.find_all("p"):
-        text_clean = p.get_text().strip()
-        if text_clean in ["DAVID C. BYERS", "**DAVID C. BYERS**"]:
-            p.insert(0, BeautifulSoup("<br/><br/><br/>", "html.parser"))
+            # 6. Closing Line (Respectfully submitted)
+            if text_upper.startswith("RESPECTFULLY SUBMITTED"):
+                p['class'] = p.get('class', []) + ['closing-line']
+
+            # 7. Verification / Certificate of Service Headings
+            if any(k in text_upper for k in ["VERIFICATION", "CERTIFICATE OF SERVICE", "PROOF OF SERVICE"]):
+                p['class'] = p.get('class', []) + ['verification-header']
+
+    # Tag hr signature rules (e.g. lines of underscores in markdown)
+    for hr in soup.find_all("hr"):
+        nxt = hr.find_next_sibling()
+        if nxt and nxt.name == "p":
+            nxt_t = nxt.get_text().strip()
+            if re.search(r"\b(?:David\s+C\.?\s*Byers|Signature|Printed Name|Notary Public)\b", nxt_t, re.IGNORECASE):
+                hr['class'] = hr.get('class', []) + ['signature-rule']
+
+    # Group signature blocks outside the header zone
+    in_header_zone = True
+    for elem in list(soup.find_all(["p", "hr"])):
+        if elem.name == "p":
+            text = elem.get_text().strip()
+            text_upper = text.upper()
+            if text_upper.startswith("NOW COMES") or re.match(r'^(I|1)\.\s+', text) or "ADMINISTRATIVE" in text_upper or "GROUP " in text_upper or "PRODUCTION RIDER" in text_upper or "motion-title" in elem.get("class", []):
+                in_header_zone = False
+
+            if in_header_zone:
+                continue
+
+            # Identify if this is a signature line
+            is_sig = False
+            if re.match(r'^(?:/s/\s*)?David\s+C\.?\s*Byers\b', text, re.IGNORECASE):
+                is_sig = True
+            elif text in ["David C. Byers", "David C. Byers, Pro Se", "David C. Byers, Petitioner Pro Se", "David C. Byers, Petitioner", "David C. Byers, Respondent"]:
+                is_sig = True
+            elif elem.find_previous_sibling() and "signature-rule" in elem.find_previous_sibling().get("class", []):
+                is_sig = True
+
+            if is_sig and not (elem.parent and "signature-block" in elem.parent.get("class", [])):
+                prev = elem.find_previous_sibling()
+                has_rule = prev and prev.name == "hr" and "signature-rule" in prev.get("class", [])
+
+                sig_classes = ["signature-block"]
+                if has_rule:
+                    sig_classes.append("has-rule")
+
+                sig_block = soup.new_tag("div", attrs={"class": " ".join(sig_classes)})
+                if has_rule:
+                    prev.insert_before(sig_block)
+                    sig_block.append(prev)
+                else:
+                    elem.insert_before(sig_block)
+
+                sig_block.append(elem)
+                elem['class'] = elem.get('class', []) + ['signature-name']
+
+                # Slurp subsequent contact lines
+                nxt = sig_block.find_next_sibling()
+                while nxt and nxt.name == "p":
+                    nxt_t = nxt.get_text().strip()
+                    if any(c in nxt_t.lower() for c in ["1st st", "dekalb", "60115", "(815)", "@gmail", "pro se", "petitioner", "printed name", "title"]):
+                        following = nxt.find_next_sibling()
+                        nxt['class'] = nxt.get('class', []) + ['signature-contact']
+                        sig_block.append(nxt)
+                        nxt = following
+                    else:
+                        break
 
     soup = format_tables_and_breaks(soup)
     return str(soup)
@@ -275,9 +350,46 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
             }}
 
             /* Verification & Certificate Blocks */
-            .verification, .certificate-of-service {{
-                page-break-inside: avoid;
-                break-inside: avoid;
+            .verification, .certificate-of-service, .verification-header {{
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+            }}
+
+            /* Closing Statement (Respectfully submitted) */
+            .closing-line {{
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+                margin-top: 12pt !important;
+                margin-bottom: 0 !important;
+            }}
+
+            /* Signature Block & Rules */
+            .signature-block {{
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                margin-top: 48pt !important; /* ~0.67 inch / 4 blank lines of signature room */
+                margin-bottom: 12pt !important;
+            }}
+
+            .signature-block.has-rule {{
+                margin-top: 0 !important; /* Spacing handled by hr.signature-rule */
+            }}
+
+            .signature-block p {{
+                margin-top: 0 !important;
+                margin-bottom: 2pt !important; /* Tight court contact lines */
+                text-align: left !important;
+            }}
+
+            hr.signature-rule {{
+                border: none !important;
+                border-top: 1pt solid #000000 !important;
+                width: 250pt !important;
+                margin-top: 48pt !important; /* Space above rule for physical signature */
+                margin-bottom: 4pt !important;
+                margin-left: 0 !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }}
 
             /* High-Density Court Table Styling */

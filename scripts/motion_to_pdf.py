@@ -96,11 +96,18 @@ def transform_pleading_structure(html_content):
 
     # Group signature blocks outside the header zone
     in_header_zone = True
-    for elem in list(soup.find_all(["p", "hr"])):
-        if elem.name == "p":
+    for elem in list(soup.find_all(["p", "h2", "h3", "h4", "hr"])):
+        if elem.name in ("p", "h2", "h3", "h4"):
             text = elem.get_text().strip()
             text_upper = text.upper()
-            if text_upper.startswith("NOW COMES") or re.match(r'^(I|1)\.\s+', text) or "ADMINISTRATIVE" in text_upper or "GROUP " in text_upper or "PRODUCTION RIDER" in text_upper or "motion-title" in elem.get("class", []):
+            if (
+                text_upper.startswith("NOW COMES")
+                or re.match(r'^(?:I{1,3}|IV|V|\d+)\.\s+', text)
+                or "ADMINISTRATIVE" in text_upper
+                or "GROUP " in text_upper
+                or "PRODUCTION RIDER" in text_upper
+                or "motion-title" in elem.get("class", [])
+            ):
                 in_header_zone = False
 
             if in_header_zone:

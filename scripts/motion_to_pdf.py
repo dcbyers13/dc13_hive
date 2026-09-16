@@ -155,15 +155,13 @@ def format_tables_and_breaks(soup):
     without distorting formal court pleading structure.
     """
     for table in soup.find_all("table"):
-        # 1. Insert zero-width break opportunities after underscores and slashes
+        # Insert zero-width break opportunities after underscores and slashes
         for cell in table.find_all(["td", "th"]):
             for string in list(cell.strings):
                 if "_" in string or "/" in string:
-                    # Add zero-width space after _ or / so WeasyPrint can wrap filenames
                     new_text = re.sub(r"([_/])", lambda m: m.group(1) + "\u200b", str(string))
                     string.replace_with(new_text)
 
-        # 2. Determine column widths based on table headers
         headers = [th.get_text().strip() for th in table.find_all("th")]
         col_count = len(headers)
         if col_count == 0:
@@ -173,29 +171,35 @@ def format_tables_and_breaks(soup):
 
         colgroup = soup.new_tag("colgroup")
 
-        # Universal Exhibits (3 cols: Letter | Document | Used In)
-        if col_count == 3 and headers and "Letter" in headers[0]:
-            widths = ["10%", "58%", "32%"]
-        # Filing-Specific Exhibits (4 cols: # | NOV_10 Filing | Assigned Letters | Pending Exhibits)
+        # 1. Two-Column Pleading Tables (Field | Detail, Item | Detail, Date | Change)
+        if col_count == 2:
+            if headers and "Date" in headers[0]:
+                widths = ["20%", "80%"]
+            else:
+                widths = ["26%", "74%"]
+        # 2. Three-Column Tables (Universal Exhibits or Rule 213 Framework)
+        elif col_count == 3:
+            if headers and "Letter" in headers[0]:
+                widths = ["10%", "58%", "32%"]
+            elif headers and any("Rule" in h for h in headers):
+                widths = ["20%", "40%", "40%"]
+            else:
+                widths = ["20%", "40%", "40%"]
+        # 3. Filing-Specific Exhibits (4 cols)
         elif col_count == 4 and headers and "#" in headers[0]:
             widths = ["6%", "34%", "14%", "46%"]
-        # Master Exhibit Catalog (5 cols: Letter | Exhibit | Source Path | Used In | Status)
+        # 4. Master Exhibit Catalog (5 cols) -> Mark as high-density
         elif col_count == 5 and headers and ("Letter" in headers[0] or "Exhibit" in headers[1]):
             widths = ["9%", "29%", "30%", "16%", "16%"]
-        # Cross-Reference Matrix (6+ cols)
+            table['class'] = table.get('class', []) + ['high-density-table']
+        # 5. Cross-Reference Matrix (6+ cols) -> Mark as high-density
         elif col_count >= 6:
             first_width = 16
             rem_width = (100 - first_width) / (col_count - 1)
             widths = [f"{first_width}%"] + [f"{rem_width:.1f}%"] * (col_count - 1)
-        # Change Log (2 cols: Date | Change)
-        elif col_count == 2 and headers and "Date" in headers[0]:
-            widths = ["20%", "80%"]
-        # Generic Fallback
+            table['class'] = table.get('class', []) + ['high-density-table']
         else:
-            if col_count > 0:
-                widths = [f"{100 / col_count:.1f}%"] * col_count
-            else:
-                widths = []
+            widths = [f"{100 / col_count:.1f}%"] * col_count if col_count > 0 else []
 
         for w in widths:
             col = soup.new_tag("col", style=f"width: {w};")
@@ -392,15 +396,15 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
                 break-after: avoid !important;
             }}
 
-            /* High-Density Court Table Styling */
+            /* Standard Pleading Table Styling (Uniform 12pt Pleading Standard) */
             table {{
                 width: 100% !important;
-                table-layout: fixed !important; /* Enforces colgroup percentage widths */
+                table-layout: fixed !important;
                 border-collapse: collapse !important;
-                margin-top: 6pt !important;
-                margin-bottom: 10pt !important;
-                font-size: 8.5pt !important;
-                line-height: 1.25 !important;
+                margin-top: 8pt !important;
+                margin-bottom: 12pt !important;
+                font-size: 12pt !important;
+                line-height: 1.3 !important;
             }}
 
             thead {{
@@ -408,7 +412,6 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
             }}
 
             tr {{
-                /* Allow rows to split across page boundaries to prevent 3-inch empty holes */
                 page-break-inside: auto !important;
                 break-inside: auto !important;
             }}
@@ -416,47 +419,53 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
             th {{
                 background-color: #f2f2f2 !important;
                 font-weight: bold !important;
-                text-align: left;
-                padding: 3.5pt 4.5pt !important;
+                text-align: left !important;
+                padding: 4pt 6pt !important;
                 border: 0.5pt solid #777 !important;
-                font-size: 8.5pt !important;
+                font-size: 12pt !important;
                 vertical-align: bottom !important;
             }}
 
             td {{
-                padding: 3pt 4.5pt !important;
+                padding: 4pt 6pt !important;
                 border: 0.5pt solid #aaa !important;
                 vertical-align: top !important;
-                font-size: 8.5pt !important;
+                font-size: 12pt !important;
                 overflow-wrap: break-word !important;
                 word-break: normal !important;
             }}
 
-            /* Ensure narrow index columns center text and do not split letter codes */
-            table colgroup col:first-child + col + col {{
-                /* preserves default flow */
+            /* Ensure all font styling within standard tables inherits uniform 12pt */
+            td *, th *, td strong, th strong, td p, th p {{
+                font-size: inherit !important;
             }}
 
-            /* First column styling for index tables */
-            th:first-child, td:first-child {{
-                text-align: center;
-                white-space: nowrap; /* Prevents PD-28 from breaking onto two lines */
+            td strong, th strong {{
+                font-weight: bold !important;
             }}
 
-            /* Checkbox and matrix table alignments */
-            td:empty {{
-                background-color: #fafafa;
+            /* High-Density Index/Catalog Tables Only (5+ columns) */
+            table.high-density-table,
+            table.high-density-table th,
+            table.high-density-table td {{
+                font-size: 8.5pt !important;
+                line-height: 1.25 !important;
+                padding: 3pt 4.5pt !important;
             }}
 
-            /* Ensure inline code in tables matches table typography */
-            td code, th code {{
+            table.high-density-table th:first-child,
+            table.high-density-table td:first-child {{
+                text-align: center !important;
+                white-space: nowrap !important;
+            }}
+
+            table.high-density-table td code,
+            table.high-density-table th code {{
                 font-family: inherit !important;
                 font-size: 8pt !important;
                 background-color: #f8f8f8;
                 padding: 1pt 2pt;
                 border: 0.5pt solid #e0e0e0;
-                overflow-wrap: break-word !important;
-                word-break: break-word !important;
             }}
         """)
 

@@ -21,12 +21,14 @@ Usage:
 """
 
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 SOURCE_ROOT = Path("25FA152/NOV_10")
 TARGET_ROOT = Path("25FA152/PRINT/NOV_10")
+UV = shutil.which("uv") or "uv"
 
 # All subdirectories under SOURCE_ROOT plus the root itself (""). Every *.md is
 # compiled to a same-name .pdf; only FILEMAP.md is excluded.
@@ -38,6 +40,7 @@ INCLUDE_DIRS = [
     "03_DIRECT_EXAMINATION",
     "04_EXHIBITS",
     "05_BENCH_STATEMENTS",
+    "SUBPOENAS",
 ]
 
 # The single never-printed file. (MASTER_PREP_TRACKER, MEDICAL_RECORD_AUDIT,
@@ -83,7 +86,8 @@ def render_one(source_md, target_pdf):
     """Compile a single .md to .pdf via motion_to_pdf.py."""
     target_pdf.parent.mkdir(parents=True, exist_ok=True)
     cmd = [
-        sys.executable,
+        UV,
+        "run",
         str(MOTION_TO_PDF),
         str(source_md),
         str(target_pdf),

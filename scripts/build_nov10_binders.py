@@ -390,7 +390,7 @@ def main() -> int:
             "type": "tab",
             "tab_letter": "TAB 1",
             "tab_title": "PRE-TRIAL MOTIONS",
-            "subtitle": "Rule 216 Deemed Admissions & Stephanie Johnson Video Testimony",
+            "subtitle": "Rule 216 Deemed Admissions, Stephanie Johnson Video Testimony & ADA Accommodation",
         },
         {
             "type": "pdf",
@@ -405,6 +405,14 @@ def main() -> int:
             "paths": [
                 "25FA152/PRINT/NOV_10/MOTION_FOR_VIDEO_TESTIMONY_STEPHANIE_JOHNSON.pdf",
                 "25FA152/NOV_10/MOTION_FOR_VIDEO_TESTIMONY_STEPHANIE_JOHNSON.pdf",
+            ],
+        },
+        {
+            "type": "pdf",
+            "label": "ADA Accommodation Request & Order (FND / C-PTSD Safety Net)",
+            "paths": [
+                "25FA152/LEGAL_FILE/03_BYERS_FILINGS/2026_05_07_Request_for_Accommodation_ADA.pdf",
+                "25FA152/OCR_BATCH/2026_05_07_Request_for_Accommodation_ADA.pdf",
             ],
         },
         {
@@ -524,11 +532,25 @@ def main() -> int:
             "type": "tab",
             "tab_letter": "TAB B",
             "tab_title": "CENTERPOINTE HOSPITAL RECORDS",
-            "subtitle": "Certified 134-Page Inpatient ROI (July 8–23, 2026)",
+            "subtitle": "Executed ROI Release, Official Transmittal Email & Certified 134-Page Inpatient Record",
         },
         {
             "type": "pdf",
-            "label": "Tab B: CenterPointe Hospital Certified Inpatient ROI (July 8-23, 2026)",
+            "label": "Tab B-1: Executed CenterPointe Hospital ROI Release Form (July 2026)",
+            "paths": [
+                "25FA152/LEGAL_FILE/02_EXHIBITS/LEGAL_DOCUMENTS/CENTERPOINTE_ROI_FORM_SIGNED_07_2026.pdf",
+            ],
+        },
+        {
+            "type": "pdf",
+            "label": "Tab B-2: CenterPointe HIM Department Official Transmittal Email Thread (July 2026)",
+            "paths": [
+                "25FA152/LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_EMAIL_THREAD_07_2026.pdf",
+            ],
+        },
+        {
+            "type": "pdf",
+            "label": "Tab B-3: CenterPointe Hospital Certified Inpatient ROI (134 pp., July 8-23, 2026)",
             "paths": [
                 "25FA152/LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_ROI_RECORDS_07_2026.pdf",
                 "25FA152/LEGAL_FILE/02_EXHIBITS/MEDICAL_RECORDS/CENTERPOINTE_HOSPITAL_MO_07_2026.pdf",
@@ -641,7 +663,7 @@ def main() -> int:
             "type": "tab",
             "tab_letter": "TAB G",
             "tab_title": "PATERNAL RESIDENTIAL STABILITY",
-            "subtitle": "5-Year Lease at 506 N. 1st St., HUD Voucher, Passed Inspection & Grandma Terri Letter",
+            "subtitle": "5-Year Lease, HUD Voucher, Grandma Terri Letter & Short-Term Guardianship Appointment",
         },
         {
             "type": "pdf",
@@ -656,6 +678,13 @@ def main() -> int:
             "label": "Tab G-2: Signed Statement of Paternal Grandmother Theresa Callahan (Exhibit TC, Dec. 26, 2024)",
             "paths": [
                 "25FA152/LEGAL_FILE/05_RELATED_CASES/24OP613/2024_12_26_EXHIBIT_TC_SIGNED_LETTER.pdf",
+            ],
+        },
+        {
+            "type": "pdf",
+            "label": "Tab G-3: Short-Term Guardianship Appointment Executed by Respondent (Aug. 9, 2026, 755 ILCS 5/11-5.4)",
+            "paths": [
+                "25FA152/LEGAL_FILE/05_RELATED_CASES/26OP158/2026_08_09_SHORT_TERM_GUARDIAN_APPOINTMENT.pdf",
             ],
         },
         {

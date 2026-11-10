@@ -485,7 +485,7 @@ def format_tables_and_breaks(soup):
     return soup
 
 def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=True,
-                          gs_sanitize=True, font_family="Arial"):
+                          gs_sanitize=True, font_family="Arial", orientation="portrait"):
     try:
         with open(input_file, "r", encoding="utf-8") as f:
             md_text = f.read()
@@ -512,7 +512,7 @@ def convert_motion_to_pdf(input_file, output_file, margin="0.72", page_numbers=T
 
         custom_css = CSS(string=f"""
             @page {{
-                size: letter portrait;
+                size: letter {orientation};
                 margin: {margin}in;
                 {page_footer}
             }}
@@ -795,6 +795,9 @@ if __name__ == "__main__":
     parser.add_argument("input", help="Input markdown file")
     parser.add_argument("output", nargs="?", default=None, help="Output PDF file")
     parser.add_argument("--margin", type=float, default=0.72, help="Page margin in inches (default: 0.72)")
+    parser.add_argument("--landscape", action="store_true", help="Render in landscape orientation (letter landscape)")
+    parser.add_argument("--orientation", choices=["portrait", "landscape"], default="portrait",
+                        help="Page orientation: portrait (default) or landscape")
     parser.add_argument("--no-page-numbers", action="store_true", help="Omit the 'Page X of Y' footer")
     parser.add_argument("--no-gs-sanitize", action="store_true",
                         help="Skip the Ghostscript prepress EmbedAllFonts/SubsetFonts pass")
@@ -802,8 +805,10 @@ if __name__ == "__main__":
                         help="Embedded TrueType sans-serif family: Arial (default), Liberation Sans, DejaVu Sans")
 
     args = parser.parse_args()
+    orientation = "landscape" if args.landscape or args.orientation == "landscape" else "portrait"
     output_pdf = args.output or args.input.rsplit(".", 1)[0] + ".pdf"
     convert_motion_to_pdf(args.input, output_pdf, margin=str(args.margin),
                           page_numbers=not args.no_page_numbers,
                           gs_sanitize=not args.no_gs_sanitize,
-                          font_family=args.font_family)
+                          font_family=args.font_family,
+                          orientation=orientation)

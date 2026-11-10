@@ -249,6 +249,33 @@ def build_binder(
     return output_path, total_pages, manifest
 
 
+def build_dividers_only_pdf(
+    items: List[dict],
+    output_filename: str = "OFFICIAL_EXHIBITS_TABS_A_J_DIVIDERS_ONLY.pdf",
+) -> Path:
+    """Generate a clean 10-page standalone PDF containing only the Tab Title Divider pages."""
+    BINDERS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = BINDERS_DIR / output_filename
+    writer = PdfWriter()
+    for item in items:
+        if item.get("type") == "tab":
+            tab_letter = item["tab_letter"]
+            tab_title = item["tab_title"]
+            subtitle = item.get("subtitle", "")
+            tab_buf = create_tab_page(tab_letter, tab_title, subtitle)
+            reader = PdfReader(tab_buf)
+            for page in reader.pages:
+                writer.add_page(page)
+
+    with open(out_path, "wb") as f:
+        writer.write(f)
+
+    size_kb = out_path.stat().st_size / 1024
+    print(f"COMPLETED: {out_path.name} | Total Pages: {len(writer.pages)} | Size: {size_kb:.1f} KB")
+    print()
+    return out_path
+
+
 def write_work_order(
     binder1_path: Path,
     binder1_pages: int,
@@ -288,6 +315,8 @@ def write_work_order(
         "  • Finishing:         Standard 3-Hole Punch on left edge",
         "  • Divider Sheets:    Insert 10-Tab Lettered Index Dividers (TABS A through J)",
         "                       at the exact PDF page numbers listed below.",
+        "                       (OPTIONAL DEDICATED DIVIDER FILE: OFFICIAL_EXHIBITS_TABS_A_J_DIVIDERS_ONLY.pdf",
+        "                       contains just these 10 tab pages for cardstock/tab printing).",
         "",
         "================================================================================",
         f"DETAILED MANIFEST — FILE 1: {binder1_path.name}",
@@ -772,6 +801,8 @@ def main() -> int:
         output_filename="02_OFFICIAL_EXHIBITS_TABS_A_J_3x_DOUBLE_SIDED.pdf",
         items=binder2_items,
     )
+
+    build_dividers_only_pdf(binder2_items)
 
     write_work_order(b1_path, b1_pages, b1_manifest, b2_path, b2_pages, b2_manifest)
 

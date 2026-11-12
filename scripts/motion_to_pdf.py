@@ -277,6 +277,37 @@ def transform_pleading_structure(html_content):
                 curr = nxt
             break
 
+    # Decompose compound header paragraphs where caption elements lack blank lines in markdown
+    for p in list(soup.find_all("p")):
+        p_text = p.get_text()
+        p_text_upper = p_text.upper()
+        if "IN THE CIRCUIT COURT" in p_text_upper and any(k in p_text_upper for k in ["PETITIONER", "RESPONDENT", "CASE NO", "CASE NOS"]):
+            lines = [line.strip() for line in p_text.splitlines() if line.strip()]
+            court_lines = []
+            rest_lines = []
+            for l in lines:
+                lu = l.upper()
+                if "CIRCUIT COURT" in lu or ("CIRCUIT" in lu and "COUNTY" in lu):
+                    court_lines.append(l)
+                else:
+                    rest_lines.append(l)
+            new_elements = []
+            p_court = soup.new_tag("p")
+            p_court.append(BeautifulSoup("<strong>" + "<br/>".join(court_lines) + "</strong>", "html.parser"))
+            new_elements.append(p_court)
+            for l in rest_lines:
+                new_p = soup.new_tag("p")
+                lu = l.upper()
+                if any(k in lu for k in ["DAVID C. BYERS", "PAULETTA D. DONATELLO", "PETITIONER", "RESPONDENT", "VS.", "VS"]):
+                    new_p.append(BeautifulSoup("<strong>" + l + "</strong>", "html.parser"))
+                else:
+                    new_p.string = l
+                new_elements.append(new_p)
+            for elem in reversed(new_elements):
+                p.insert_after(elem)
+            p.decompose()
+            break
+
     # State flag to restrict caption/title tagging strictly to the top header area
     in_header_zone = True
 
